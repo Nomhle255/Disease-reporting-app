@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="primary_green">#1B5E20</color>
+    <color name="header_green">#145A32</color>
+    <color name="background_light">#F7F7F2</color>
+    <color name="text_hint">#757575</color>
+    <color name="border_color">#CCCCCC</color>
+
+    <!-- Status Colors -->
+    <color name="status_new">#D32F2F</color>
+    <color name="status_active">#1976D2</color>
+    <color name="status_visit">#512DA8</color>
+    <color name="status_resolved">#388E3C</color>
+
+    <color name="tag_pending_bg">#FFF3E0</color>
+    <color name="tag_pending_text">#E65100</color>
+    <color name="tag_investigating_bg">#E3F2FD</color>
+    <color name="tag_investigating_text">#1565C0</color>
+    <color name="tag_resolved_bg">#E8F5E9</color>
+    <color name="tag_resolved_text">#2E7D32</color>
+    <color name="tag_visit_bg">#F3E5F5</color>
+    <color name="tag_visit_text">#6A1B9A</color>
+</resources>

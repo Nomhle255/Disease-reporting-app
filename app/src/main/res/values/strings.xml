@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">Disease Alert Lesotho</string>
+
+    <string-array name="roles_array">
+        <item>Farmer</item>
+        <item>Vet</item>
+        <item>Admin</item>
+    </string-array>
+
+    <string-array name="districts_array">
+        <item>Maseru</item>
+        <item>Berea</item>
+        <item>Leribe</item>
+        <item>Butha-Buthe</item>
+        <item>Mokhotlong</item>
+        <item>Thaba-Tseka</item>
+        <item>Mafeteng</item>
+        <item>Mohale\'s Hoek</item>
+        <item>Quthing</item>
+        <item>Qacha\'s Nek</item>
+    </string-array>
+</resources>
