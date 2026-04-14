@@ -2,6 +2,7 @@ package com.example.diseasealertlesotho;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -14,6 +15,7 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -46,8 +48,6 @@ public class LoginActivity extends AppCompatActivity {
         initViews();
 
         db = openOrCreateDatabase("DiseaseAlertDB", Context.MODE_PRIVATE, null);
-        // Ensure tables exist
-        db.execSQL("CREATE TABLE IF NOT EXISTS users(phone VARCHAR PRIMARY KEY, firstname VARCHAR, lastname VARCHAR, email VARCHAR, role VARCHAR, password VARCHAR);");
         db.execSQL("CREATE TABLE IF NOT EXISTS reports(id INTEGER PRIMARY KEY AUTOINCREMENT, user_phone VARCHAR, animal_type VARCHAR, count INTEGER, symptoms TEXT, date VARCHAR, photo BLOB);");
 
         btnLogin.setOnClickListener(new OnClickListener() {
@@ -84,21 +84,28 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        // Query database for user using parameterized query for safety
         Cursor c = db.rawQuery("SELECT * FROM users WHERE (email=? OR phone=?) AND password=?", new String[]{username, username, password});
-        
+
         if (c.moveToFirst()) {
             String role = c.getString(c.getColumnIndexOrThrow("role"));
             String firstName = c.getString(c.getColumnIndexOrThrow("firstname"));
             String lastName = c.getString(c.getColumnIndexOrThrow("lastname"));
             String phone = c.getString(c.getColumnIndexOrThrow("phone"));
             
+            // SAVE SESSION
+            SharedPreferences sp = getSharedPreferences("UserSession", MODE_PRIVATE);
+            SharedPreferences.Editor editor = sp.edit();
+            editor.putString("phone", phone);
+            editor.putString("name", firstName + " " + lastName);
+            editor.putString("role", role);
+            editor.putBoolean("isLoggedIn", true);
+            editor.apply();
+
             if ("Admin".equalsIgnoreCase(role)) {
                 Intent intent = new Intent(LoginActivity.this, AdminDashboardActivity.class);
                 startActivity(intent);
                 finish();
             } else if ("Farmer".equalsIgnoreCase(role)) {
-                // Get report counts using phone
                 int totalReports = 0;
                 Cursor cursorReports = db.rawQuery("SELECT COUNT(*) FROM reports WHERE user_phone=?", new String[]{phone});
                 if (cursorReports.moveToFirst()) {
@@ -112,8 +119,6 @@ public class LoginActivity extends AppCompatActivity {
                 intent.putExtra("USER_PHONE", phone);
                 startActivity(intent);
                 finish();
-            } else {
-                showMessage("Success", "Login Successful as " + role);
             }
         } else {
             showMessage("Error", "Invalid Credentials");

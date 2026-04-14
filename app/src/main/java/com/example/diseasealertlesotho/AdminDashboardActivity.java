@@ -2,6 +2,7 @@ package com.example.diseasealertlesotho;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -10,6 +11,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -70,6 +72,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
+        // Top Logout Button
+        findViewById(R.id.btn_logout_top).setOnClickListener(v -> showLogoutDialog());
+
         // Manage Users Action
         findViewById(R.id.layout_manage_users).setOnClickListener(v -> {
             Intent intent = new Intent(AdminDashboardActivity.this, ManageUsersActivity.class);
@@ -106,9 +111,34 @@ public class AdminDashboardActivity extends AppCompatActivity {
             Intent intent = new Intent(AdminDashboardActivity.this, StatisticsActivity.class);
             startActivity(intent);
         });
+
+        // Bottom navigation "Profile" tab
+        findViewById(R.id.bottom_navigation).findViewById(R.id.layout_profile_tab).setOnClickListener(v -> {
+            Toast.makeText(this, "Profile clicked", Toast.LENGTH_SHORT).show();
+        });
+
         // Bottom navigation "Home" tab
         findViewById(R.id.bottom_navigation).findViewById(R.id.layout_home_tab).setOnClickListener(v -> {
             // Already here
         });
+    }
+
+    private void showLogoutDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Logout");
+        builder.setMessage("Are you sure you want to logout?");
+        builder.setPositiveButton("Logout", (dialog, which) -> {
+            SharedPreferences sp = getSharedPreferences("UserSession", MODE_PRIVATE);
+            SharedPreferences.Editor editor = sp.edit();
+            editor.clear();
+            editor.apply();
+
+            Intent intent = new Intent(AdminDashboardActivity.this, LoginActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+        });
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
     }
 }

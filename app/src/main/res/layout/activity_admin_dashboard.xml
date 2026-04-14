@@ -52,6 +52,23 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/tv_welcome_back" />
 
+            <!-- Logout Button at the top -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_logout_top"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:layout_marginEnd="16dp"
+                android:text="Logout"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                app:backgroundTint="#C62828"
+                app:cornerRadius="8dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:strokeColor="@color/white"
+                app:strokeWidth="1dp" />
+
             <TextView
                 android:id="@+id/tv_system_overview"
                 android:layout_width="wrap_content"
@@ -466,7 +483,7 @@
         </LinearLayout>
 
         <LinearLayout
-            android:id="@+id/layout_settings_tab"
+            android:id="@+id/layout_profile_tab"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -478,12 +495,12 @@
             <ImageView
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_preferences"
+                android:src="@android:drawable/ic_menu_myplaces"
                 app:tint="#757575" />
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Settings"
+                android:text="Profile"
                 android:textColor="#757575"
                 android:textSize="10sp" />
         </LinearLayout>

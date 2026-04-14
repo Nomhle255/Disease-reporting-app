@@ -27,38 +27,23 @@ public class MainActivity extends AppCompatActivity {
     private AutoCompleteTextView actRole;
     private MaterialButton btnCreateAccount;
     private TextView tvLogin;
-    
-    // Database variable
-    SQLiteDatabase db;
+    private SQLiteDatabase db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-        
-        View mainView = findViewById(R.id.main);
-        if (mainView != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(mainView, (v, insets) -> {
-                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-                return insets;
-            });
-        }
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
 
         initViews();
         setupDropdowns();
-        
-        // Initialize Database
-        db = openOrCreateDatabase("DiseaseAlertDB", Context.MODE_PRIVATE, null);
-        
-        // Clear all tables to ensure schema consistency
-        db.execSQL("DROP TABLE IF EXISTS users;");
-        db.execSQL("DROP TABLE IF EXISTS reports;");
-        
-        // Recreate tables with new schema
-        db.execSQL("CREATE TABLE users(phone VARCHAR PRIMARY KEY, firstname VARCHAR, lastname VARCHAR, email VARCHAR, role VARCHAR, password VARCHAR);");
-        db.execSQL("CREATE TABLE reports(id INTEGER PRIMARY KEY AUTOINCREMENT, user_phone VARCHAR, animal_type VARCHAR, count INTEGER, symptoms TEXT, date VARCHAR, photo BLOB);");
+        initDatabase();
 
         btnCreateAccount.setOnClickListener(v -> {
             if (validateForm()) {
@@ -67,10 +52,28 @@ public class MainActivity extends AppCompatActivity {
         });
 
         tvLogin.setOnClickListener(v -> {
-            Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-            startActivity(intent);
+            startActivity(new Intent(MainActivity.this, LoginActivity.class));
             finish();
         });
+    }
+
+    private void initDatabase() {
+        db = openOrCreateDatabase("DiseaseAlertDB", Context.MODE_PRIVATE, null);
+        db.execSQL("CREATE TABLE IF NOT EXISTS users(" +
+                "phone VARCHAR PRIMARY KEY, " +
+                "firstname VARCHAR, " +
+                "lastname VARCHAR, " +
+                "email VARCHAR, " +
+                "role VARCHAR, " +
+                "password VARCHAR);");
+        db.execSQL("CREATE TABLE IF NOT EXISTS reports(" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "user_phone VARCHAR, " +
+                "animal_type VARCHAR, " +
+                "count INTEGER, " +
+                "symptoms TEXT, " +
+                "date VARCHAR, " +
+                "photo BLOB);");
     }
 
     private void initViews() {
@@ -93,14 +96,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void saveToDatabase() {
+        String phone = etPhone.getText().toString().trim();
         String email = etEmail.getText().toString().trim();
         String fName = etFirstName.getText().toString().trim();
         String lName = etLastName.getText().toString().trim();
-        String phone = etPhone.getText().toString().trim();
         String role = actRole.getText().toString().trim();
         String pwd = etPassword.getText().toString().trim();
 
-        // Check if phone number already exists
+        // Check for duplicate phone
         Cursor cursor = db.rawQuery("SELECT * FROM users WHERE phone = ?", new String[]{phone});
         if (cursor.getCount() > 0) {
             showMessage("Error", "User with this phone number already exists");
@@ -109,12 +112,20 @@ public class MainActivity extends AppCompatActivity {
         }
         cursor.close();
 
+        // Check for duplicate email
+        cursor = db.rawQuery("SELECT * FROM users WHERE email = ?", new String[]{email});
+        if (cursor.getCount() > 0) {
+            showMessage("Error", "User with this email already exists");
+            cursor.close();
+            return;
+        }
+        cursor.close();
+
         try {
-            db.execSQL("INSERT INTO users VALUES(?, ?, ?, ?, ?, ?)", new Object[]{phone, fName, lName, email, role, pwd});
+            db.execSQL("INSERT INTO users VALUES(?, ?, ?, ?, ?, ?)",
+                    new Object[]{phone, fName, lName, email, role, pwd});
             Toast.makeText(this, "Account created successfully", Toast.LENGTH_SHORT).show();
-            
-            Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-            startActivity(intent);
+            startActivity(new Intent(MainActivity.this, LoginActivity.class));
             finish();
         } catch (Exception e) {
             showMessage("Error", "Registration failed: " + e.getMessage());
@@ -122,48 +133,61 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean validateForm() {
-        if (etFirstName.getText().toString().trim().isEmpty()) {
+        String firstName = etFirstName.getText().toString().trim();
+        String lastName = etLastName.getText().toString().trim();
+        String phone = etPhone.getText().toString().trim();
+        String email = etEmail.getText().toString().trim();
+        String password = etPassword.getText().toString();
+        String confirmPassword = etConfirmPassword.getText().toString();
+
+        if (firstName.isEmpty()) {
             etFirstName.setError("First Name is required");
             return false;
         }
-        if (etLastName.getText().toString().trim().isEmpty()) {
+        if (lastName.isEmpty()) {
             etLastName.setError("Last Name is required");
             return false;
         }
-        if (etPhone.getText().toString().trim().isEmpty()) {
+        if (phone.isEmpty()) {
             etPhone.setError("Phone Number is required");
             return false;
         }
-        if (etEmail.getText().toString().trim().isEmpty()) {
+        if (email.isEmpty()) {
             etEmail.setError("Email is required");
             return false;
         }
-        if (etPassword.getText().toString().length() < 6) {
+        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            etEmail.setError("Please enter a valid email");
+            return false;
+        }
+        if (password.length() < 6) {
             etPassword.setError("Password must be at least 6 characters");
             return false;
         }
-        if (!etPassword.getText().toString().equals(etConfirmPassword.getText().toString())) {
+        if (!password.equals(confirmPassword)) {
             etConfirmPassword.setError("Passwords do not match");
+            return false;
+        }
+        if (actRole.getText().toString().isEmpty()) {
+            Toast.makeText(this, "Please select a role", Toast.LENGTH_SHORT).show();
             return false;
         }
         return true;
     }
 
-    public void showMessage(String title, String message) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setCancelable(true);
-        builder.setTitle(title);
-        builder.setMessage(message);
-        builder.show();
+    private void showMessage(String title, String message) {
+        new AlertDialog.Builder(this)
+                .setCancelable(true)
+                .setTitle(title)
+                .setMessage(message)
+                .show();
     }
 
-    public void clearText() {
-        etFirstName.setText("");
-        etLastName.setText("");
-        etEmail.setText("");
-        etPhone.setText("");
-        etPassword.setText("");
-        etConfirmPassword.setText("");
-        etFirstName.requestFocus();
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (db != null && db.isOpen()) {
+            db.close();
+        }
     }
 }
