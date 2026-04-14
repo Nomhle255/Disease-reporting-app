@@ -14,7 +14,7 @@ import androidx.core.view.WindowInsetsCompat;
 public class FarmerDashboardActivity extends AppCompatActivity {
 
     View btnReport;
-    TextView tvUserName;
+    TextView tvUserName, tvTotalReports;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -32,11 +32,19 @@ public class FarmerDashboardActivity extends AppCompatActivity {
         }
 
         tvUserName = findViewById(R.id.tv_user_name);
+        tvTotalReports = findViewById(R.id.tv_total_reports);
         
-        // Retrieve the user's name from the Intent
+        // Retrieve data from Intent
         String userName = getIntent().getStringExtra("USER_NAME");
+        String totalReports = getIntent().getStringExtra("TOTAL_REPORTS");
+        final String userEmail = getIntent().getStringExtra("USER_EMAIL"); // Need this to pass to report activity
+
         if (userName != null && !userName.isEmpty()) {
             tvUserName.setText(userName);
+        }
+        
+        if (totalReports != null) {
+            tvTotalReports.setText(totalReports);
         }
 
         btnReport = findViewById(R.id.btn_report_nav);
@@ -44,6 +52,7 @@ public class FarmerDashboardActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(FarmerDashboardActivity.this, ReportDiseaseActivity.class);
+                intent.putExtra("USER_EMAIL", userEmail);
                 startActivity(intent);
             }
         });

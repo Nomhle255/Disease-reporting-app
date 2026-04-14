@@ -14,7 +14,6 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -47,8 +46,9 @@ public class LoginActivity extends AppCompatActivity {
         initViews();
 
         db = openOrCreateDatabase("DiseaseAlertDB", Context.MODE_PRIVATE, null);
-        // Ensure reports table exists
-        db.execSQL("CREATE TABLE IF NOT EXISTS reports(id INTEGER PRIMARY KEY AUTOINCREMENT, user_id VARCHAR, animal_type VARCHAR, count INTEGER, symptoms TEXT, date VARCHAR, photo BLOB);");
+        // Ensure tables exist
+        db.execSQL("CREATE TABLE IF NOT EXISTS users(phone VARCHAR PRIMARY KEY, firstname VARCHAR, lastname VARCHAR, email VARCHAR, role VARCHAR, password VARCHAR);");
+        db.execSQL("CREATE TABLE IF NOT EXISTS reports(id INTEGER PRIMARY KEY AUTOINCREMENT, user_phone VARCHAR, animal_type VARCHAR, count INTEGER, symptoms TEXT, date VARCHAR, photo BLOB);");
 
         btnLogin.setOnClickListener(new OnClickListener() {
             @Override
@@ -84,37 +84,32 @@ public class LoginActivity extends AppCompatActivity {
             return;
         }
 
-        // Query database for user
-        Cursor c = db.rawQuery("SELECT * FROM users WHERE email='" + username + "' AND password='" + password + "'", null);
+        // Query database for user using parameterized query for safety
+        Cursor c = db.rawQuery("SELECT * FROM users WHERE (email=? OR phone=?) AND password=?", new String[]{username, username, password});
+        
         if (c.moveToFirst()) {
             String role = c.getString(c.getColumnIndexOrThrow("role"));
             String firstName = c.getString(c.getColumnIndexOrThrow("firstname"));
             String lastName = c.getString(c.getColumnIndexOrThrow("lastname"));
-            String email = c.getString(c.getColumnIndexOrThrow("email"));
+            String phone = c.getString(c.getColumnIndexOrThrow("phone"));
             
             if ("Admin".equalsIgnoreCase(role)) {
                 Intent intent = new Intent(LoginActivity.this, AdminDashboardActivity.class);
                 startActivity(intent);
                 finish();
             } else if ("Farmer".equalsIgnoreCase(role)) {
-                // Get report counts
+                // Get report counts using phone
                 int totalReports = 0;
-                int pendingReports = 0;
-                int resolvedReports = 0;
-
-                Cursor cursorReports = db.rawQuery("SELECT COUNT(*) FROM reports WHERE user_id='" + email + "'", null);
+                Cursor cursorReports = db.rawQuery("SELECT COUNT(*) FROM reports WHERE user_phone=?", new String[]{phone});
                 if (cursorReports.moveToFirst()) {
                     totalReports = cursorReports.getInt(0);
                 }
                 cursorReports.close();
 
-                // Assuming a 'status' column in reports table for pending/resolved
-                // For now, let's just pass the total count. 
-                // You can expand the query if you have a status column.
-
                 Intent intent = new Intent(LoginActivity.this, FarmerDashboardActivity.class);
                 intent.putExtra("USER_NAME", firstName + " " + lastName);
                 intent.putExtra("TOTAL_REPORTS", String.valueOf(totalReports));
+                intent.putExtra("USER_PHONE", phone);
                 startActivity(intent);
                 finish();
             } else {

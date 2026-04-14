@@ -2,6 +2,7 @@ package com.example.diseasealertlesotho;
 
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.View;
@@ -50,7 +51,14 @@ public class MainActivity extends AppCompatActivity {
         
         // Initialize Database
         db = openOrCreateDatabase("DiseaseAlertDB", Context.MODE_PRIVATE, null);
-        db.execSQL("CREATE TABLE IF NOT EXISTS users(email VARCHAR PRIMARY KEY, firstname VARCHAR, lastname VARCHAR, phone VARCHAR, role VARCHAR, password VARCHAR);");
+        
+        // Clear all tables to ensure schema consistency
+        db.execSQL("DROP TABLE IF EXISTS users;");
+        db.execSQL("DROP TABLE IF EXISTS reports;");
+        
+        // Recreate tables with new schema
+        db.execSQL("CREATE TABLE users(phone VARCHAR PRIMARY KEY, firstname VARCHAR, lastname VARCHAR, email VARCHAR, role VARCHAR, password VARCHAR);");
+        db.execSQL("CREATE TABLE reports(id INTEGER PRIMARY KEY AUTOINCREMENT, user_phone VARCHAR, animal_type VARCHAR, count INTEGER, symptoms TEXT, date VARCHAR, photo BLOB);");
 
         btnCreateAccount.setOnClickListener(v -> {
             if (validateForm()) {
@@ -58,7 +66,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Updated to navigate to LoginActivity
         tvLogin.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, LoginActivity.class);
             startActivity(intent);
@@ -73,9 +80,7 @@ public class MainActivity extends AppCompatActivity {
         etPhone = findViewById(R.id.et_phone);
         etPassword = findViewById(R.id.et_password);
         etConfirmPassword = findViewById(R.id.et_confirm_password);
-
         actRole = findViewById(R.id.act_role);
-
         btnCreateAccount = findViewById(R.id.btn_create_account);
         tvLogin = findViewById(R.id.tv_login);
     }
@@ -88,19 +93,29 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void saveToDatabase() {
-        try {
-            String email = etEmail.getText().toString().trim();
-            String fName = etFirstName.getText().toString().trim();
-            String lName = etLastName.getText().toString().trim();
-            String phone = etPhone.getText().toString().trim();
-            String role = actRole.getText().toString().trim();
-            String pwd = etPassword.getText().toString().trim();
+        String email = etEmail.getText().toString().trim();
+        String fName = etFirstName.getText().toString().trim();
+        String lName = etLastName.getText().toString().trim();
+        String phone = etPhone.getText().toString().trim();
+        String role = actRole.getText().toString().trim();
+        String pwd = etPassword.getText().toString().trim();
 
-            // Insert data into users table
-            db.execSQL("INSERT INTO users VALUES('" + email + "','" + fName + "','" + lName + "','" + phone + "','" + role + "','" + pwd + "');");
+        // Check if phone number already exists
+        Cursor cursor = db.rawQuery("SELECT * FROM users WHERE phone = ?", new String[]{phone});
+        if (cursor.getCount() > 0) {
+            showMessage("Error", "User with this phone number already exists");
+            cursor.close();
+            return;
+        }
+        cursor.close();
+
+        try {
+            db.execSQL("INSERT INTO users VALUES(?, ?, ?, ?, ?, ?)", new Object[]{phone, fName, lName, email, role, pwd});
+            Toast.makeText(this, "Account created successfully", Toast.LENGTH_SHORT).show();
             
-            showMessage("Success", "Account created successfully for " + fName);
-            clearText();
+            Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+            startActivity(intent);
+            finish();
         } catch (Exception e) {
             showMessage("Error", "Registration failed: " + e.getMessage());
         }
@@ -115,24 +130,20 @@ public class MainActivity extends AppCompatActivity {
             etLastName.setError("Last Name is required");
             return false;
         }
+        if (etPhone.getText().toString().trim().isEmpty()) {
+            etPhone.setError("Phone Number is required");
+            return false;
+        }
         if (etEmail.getText().toString().trim().isEmpty()) {
             etEmail.setError("Email is required");
             return false;
         }
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(etEmail.getText().toString().trim()).matches()) {
-            etEmail.setError("Please enter a valid email");
-            return false;
-        }
-        if (etPassword.getText().toString().isEmpty()) {
-            etPassword.setError("Password is required");
+        if (etPassword.getText().toString().length() < 6) {
+            etPassword.setError("Password must be at least 6 characters");
             return false;
         }
         if (!etPassword.getText().toString().equals(etConfirmPassword.getText().toString())) {
             etConfirmPassword.setError("Passwords do not match");
-            return false;
-        }
-        if (actRole.getText().toString().isEmpty()) {
-            Toast.makeText(this, "Please select a role", Toast.LENGTH_SHORT).show();
             return false;
         }
         return true;
