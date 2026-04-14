@@ -35,6 +35,12 @@
         <activity
             android:name=".AllReportsActivity"
             android:exported="false" />
+        <activity
+            android:name=".FarmerDashboardActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ReportDiseaseActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

@@ -47,6 +47,8 @@ public class LoginActivity extends AppCompatActivity {
         initViews();
 
         db = openOrCreateDatabase("DiseaseAlertDB", Context.MODE_PRIVATE, null);
+        // Ensure reports table exists
+        db.execSQL("CREATE TABLE IF NOT EXISTS reports(id INTEGER PRIMARY KEY AUTOINCREMENT, user_id VARCHAR, animal_type VARCHAR, count INTEGER, symptoms TEXT, date VARCHAR, photo BLOB);");
 
         btnLogin.setOnClickListener(new OnClickListener() {
             @Override
@@ -86,15 +88,37 @@ public class LoginActivity extends AppCompatActivity {
         Cursor c = db.rawQuery("SELECT * FROM users WHERE email='" + username + "' AND password='" + password + "'", null);
         if (c.moveToFirst()) {
             String role = c.getString(c.getColumnIndexOrThrow("role"));
+            String firstName = c.getString(c.getColumnIndexOrThrow("firstname"));
+            String lastName = c.getString(c.getColumnIndexOrThrow("lastname"));
+            String email = c.getString(c.getColumnIndexOrThrow("email"));
             
             if ("Admin".equalsIgnoreCase(role)) {
-                // Navigate to Admin Dashboard
                 Intent intent = new Intent(LoginActivity.this, AdminDashboardActivity.class);
+                startActivity(intent);
+                finish();
+            } else if ("Farmer".equalsIgnoreCase(role)) {
+                // Get report counts
+                int totalReports = 0;
+                int pendingReports = 0;
+                int resolvedReports = 0;
+
+                Cursor cursorReports = db.rawQuery("SELECT COUNT(*) FROM reports WHERE user_id='" + email + "'", null);
+                if (cursorReports.moveToFirst()) {
+                    totalReports = cursorReports.getInt(0);
+                }
+                cursorReports.close();
+
+                // Assuming a 'status' column in reports table for pending/resolved
+                // For now, let's just pass the total count. 
+                // You can expand the query if you have a status column.
+
+                Intent intent = new Intent(LoginActivity.this, FarmerDashboardActivity.class);
+                intent.putExtra("USER_NAME", firstName + " " + lastName);
+                intent.putExtra("TOTAL_REPORTS", String.valueOf(totalReports));
                 startActivity(intent);
                 finish();
             } else {
                 showMessage("Success", "Login Successful as " + role);
-                // Navigate to Farmer/Vet Dashboard later
             }
         } else {
             showMessage("Error", "Invalid Credentials");
