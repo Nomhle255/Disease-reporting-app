@@ -108,7 +108,7 @@
     </LinearLayout>
 
     <LinearLayout
-        android:id="@+id/layout_settings_tab"
+        android:id="@+id/layout_profile_tab"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
@@ -118,16 +118,16 @@
         android:gravity="center"
         android:orientation="vertical">
         <ImageView
-            android:id="@+id/iv_settings_icon"
+            android:id="@+id/iv_profile_icon"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:src="@android:drawable/ic_menu_preferences"
+            android:src="@android:drawable/ic_menu_myplaces"
             app:tint="#757575" />
         <TextView
-            android:id="@+id/tv_settings_text"
+            android:id="@+id/tv_profile_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Settings"
+            android:text="Profile"
             android:textColor="#757575"
             android:textSize="10sp" />
     </LinearLayout>

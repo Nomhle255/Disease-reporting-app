@@ -221,10 +221,13 @@
         app:layout_constraintBottom_toBottomOf="parent">
 
         <LinearLayout
+            android:id="@+id/layout_home_tab"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
             android:orientation="vertical">
             <ImageView
                 android:layout_width="24dp"
@@ -240,10 +243,13 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/layout_reports_tab"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
             android:orientation="vertical">
             <ImageView
                 android:layout_width="24dp"
@@ -282,10 +288,13 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/layout_alerts_tab"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
             android:orientation="vertical">
 
             <FrameLayout
@@ -321,10 +330,13 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/layout_profile_tab"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
+            android:clickable="true"
+            android:focusable="true"
             android:orientation="vertical">
             <ImageView
                 android:layout_width="24dp"

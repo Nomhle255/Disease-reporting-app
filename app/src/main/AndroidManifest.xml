@@ -41,6 +41,9 @@
         <activity
             android:name=".ReportDiseaseActivity"
             android:exported="false" />
+        <activity
+            android:name=".FarmerReportHistoryActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

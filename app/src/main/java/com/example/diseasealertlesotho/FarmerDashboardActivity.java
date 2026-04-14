@@ -56,5 +56,9 @@ public class FarmerDashboardActivity extends AppCompatActivity {
                 startActivity(intent);
             }
         });
+        findViewById(R.id.layout_reports_tab).setOnClickListener(v -> {
+            Intent intent = new Intent(FarmerDashboardActivity.this, FarmerReportHistoryActivity.class);
+            startActivity(intent);
+        });
     }
 }

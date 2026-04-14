@@ -14,6 +14,7 @@ import android.widget.BaseAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -150,6 +151,10 @@ public class ManageUsersActivity extends AppCompatActivity {
             Intent intent = new Intent(ManageUsersActivity.this, AllReportsActivity.class);
             startActivity(intent);
             finish();
+        });
+
+        findViewById(R.id.layout_profile_tab).setOnClickListener(v -> {
+            Toast.makeText(this, "Profile clicked", Toast.LENGTH_SHORT).show();
         });
     }
 
