@@ -27,6 +27,18 @@
             android:name=".AdminDashboardActivity"
             android:exported="false" />
         <activity
+            android:name=".VetDashboardActivity"
+            android:exported="false" />
+        <activity
+            android:name=".VetCasesActivity"
+            android:exported="false" />
+        <activity
+            android:name=".VetAlertsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".VetCaseDetailsActivity"
+            android:exported="false" />
+        <activity
             android:name=".ManageUsersActivity"
             android:exported="false" />
         <activity

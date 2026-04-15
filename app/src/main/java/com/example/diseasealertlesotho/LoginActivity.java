@@ -96,6 +96,8 @@ public class LoginActivity extends AppCompatActivity {
             SharedPreferences sp = getSharedPreferences("UserSession", MODE_PRIVATE);
             SharedPreferences.Editor editor = sp.edit();
             editor.putString("phone", phone);
+            editor.putString("firstname", firstName);
+            editor.putString("lastname", lastName);
             editor.putString("name", firstName + " " + lastName);
             editor.putString("role", role);
             editor.putBoolean("isLoggedIn", true);
@@ -117,6 +119,10 @@ public class LoginActivity extends AppCompatActivity {
                 intent.putExtra("USER_NAME", firstName + " " + lastName);
                 intent.putExtra("TOTAL_REPORTS", String.valueOf(totalReports));
                 intent.putExtra("USER_PHONE", phone);
+                startActivity(intent);
+                finish();
+            } else if ("Vet".equalsIgnoreCase(role)) {
+                Intent intent = new Intent(LoginActivity.this, VetDashboardActivity.class);
                 startActivity(intent);
                 finish();
             }
