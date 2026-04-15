@@ -5,17 +5,13 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -30,7 +26,6 @@ import java.util.List;
 public class AllReportsActivity extends AppCompatActivity {
 
     private ListView listView;
-    private EditText etSearch;
     private ReportAdapter adapter;
     private List<Report> reportList = new ArrayList<>();
     private List<Report> filteredList = new ArrayList<>();
@@ -55,7 +50,6 @@ public class AllReportsActivity extends AppCompatActivity {
         initViews();
         setupDatabase();
         loadReports();
-        setupSearch();
         setupFilters();
         setupNavigation();
         updateSummaryStats();
@@ -65,7 +59,6 @@ public class AllReportsActivity extends AppCompatActivity {
 
     private void initViews() {
         listView = findViewById(R.id.list_reports);
-        etSearch = findViewById(R.id.et_search_reports);
         adapter = new ReportAdapter(this, filteredList);
         listView.setAdapter(adapter);
     }
@@ -109,7 +102,7 @@ public class AllReportsActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        applyFilters("");
+        applyFilters();
     }
 
     private void updateSummaryStats() {
@@ -128,8 +121,6 @@ public class AllReportsActivity extends AppCompatActivity {
             setupSummaryCard(group.getChildAt(2), String.valueOf(investigating), "Active", R.color.status_active);
             setupSummaryCard(group.getChildAt(3), String.valueOf(resolved), "Resolved", R.color.status_resolved);
         }
-        
-        ((TextView)findViewById(R.id.tv_reports_subtitle)).setText(reportList.size() + " total reports across all districts");
     }
 
     private void setupSummaryCard(View card, String count, String label, int colorRes) {
@@ -141,19 +132,6 @@ public class AllReportsActivity extends AppCompatActivity {
         tvLabel.setText(label);
     }
 
-    private void setupSearch() {
-        etSearch.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                applyFilters(s.toString());
-            }
-            @Override
-            public void afterTextChanged(Editable s) {}
-        });
-    }
-
     private void setupFilters() {
         findViewById(R.id.btn_filter_all).setOnClickListener(v -> updateFilter("All"));
         findViewById(R.id.btn_filter_pending).setOnClickListener(v -> updateFilter("Pending"));
@@ -163,18 +141,15 @@ public class AllReportsActivity extends AppCompatActivity {
 
     private void updateFilter(String filter) {
         currentFilter = filter;
-        applyFilters(etSearch.getText().toString());
+        applyFilters();
     }
 
-    private void applyFilters(String query) {
+    private void applyFilters() {
         filteredList.clear();
         for (Report report : reportList) {
             boolean matchesFilter = currentFilter.equals("All") || report.status.equalsIgnoreCase(currentFilter);
-            boolean matchesQuery = report.farmerName.toLowerCase().contains(query.toLowerCase()) || 
-                                 report.animalType.toLowerCase().contains(query.toLowerCase()) ||
-                                 report.symptoms.toLowerCase().contains(query.toLowerCase());
             
-            if (matchesFilter && matchesQuery) {
+            if (matchesFilter) {
                 filteredList.add(report);
             }
         }
