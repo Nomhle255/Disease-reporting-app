@@ -91,7 +91,9 @@ public class FarmerReportHistoryActivity extends AppCompatActivity {
                     if (report.status == null) report.status = "Pending";
 
                     if (report.status.equalsIgnoreCase("Investigating")) {
-                        report.footerMessage = "Vet responded · Farm visit scheduled soon";
+                        report.footerMessage = "Vet requested more info · Please check alerts";
+                    } else if (report.status.equalsIgnoreCase("Scheduled")) {
+                        report.footerMessage = "Vet responded · Farm visit scheduled";
                     } else if (report.status.equalsIgnoreCase("Resolved")) {
                         report.footerMessage = "Case closed · Treatment advised";
                     } else {
@@ -118,7 +120,7 @@ public class FarmerReportHistoryActivity extends AppCompatActivity {
             applyFilter();
         });
         findViewById(R.id.btn_filter_active).setOnClickListener(v -> {
-            currentFilter = "Investigating";
+            currentFilter = "Scheduled";
             applyFilter();
         });
         findViewById(R.id.btn_filter_resolved).setOnClickListener(v -> {
@@ -202,13 +204,19 @@ public class FarmerReportHistoryActivity extends AppCompatActivity {
 
             tvTitle.setText(report.animalType + " — " + report.symptoms);
             tvMeta.setText(report.reportId + " · " + report.date + " · " + report.district);
-            tvStatus.setText(report.status);
+            
+            // Map status for display
+            String displayStatus = report.status;
+            if (report.status.equalsIgnoreCase("Investigating")) {
+                displayStatus = "Info Requested";
+            }
+            tvStatus.setText(displayStatus);
             tvFooter.setText(report.footerMessage);
 
             if (report.status.equalsIgnoreCase("Pending")) {
                 tvStatus.setBackgroundTintList(ContextCompat.getColorStateList(context, R.color.tag_pending_bg));
                 tvStatus.setTextColor(ContextCompat.getColor(context, R.color.tag_pending_text));
-            } else if (report.status.equalsIgnoreCase("Investigating")) {
+            } else if (report.status.equalsIgnoreCase("Investigating") || report.status.equalsIgnoreCase("Scheduled")) {
                 tvStatus.setBackgroundTintList(ContextCompat.getColorStateList(context, R.color.tag_investigating_bg));
                 tvStatus.setTextColor(ContextCompat.getColor(context, R.color.tag_investigating_text));
             } else if (report.status.equalsIgnoreCase("Resolved")) {

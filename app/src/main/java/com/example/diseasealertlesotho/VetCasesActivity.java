@@ -112,7 +112,7 @@ public class VetCasesActivity extends AppCompatActivity {
         int pending = 0, scheduled = 0, resolved = 0;
         for (CaseReport r : caseList) {
             if (r.status.equalsIgnoreCase("Pending")) pending++;
-            else if (r.status.equalsIgnoreCase("Investigating")) scheduled++;
+            else if (r.status.equalsIgnoreCase("Scheduled")) scheduled++;
             else if (r.status.equalsIgnoreCase("Resolved")) resolved++;
         }
 
@@ -128,7 +128,7 @@ public class VetCasesActivity extends AppCompatActivity {
     private void setupFilters() {
         btnAll.setOnClickListener(v -> updateFilter("All"));
         btnPending.setOnClickListener(v -> updateFilter("Pending"));
-        btnActive.setOnClickListener(v -> updateFilter("Investigating"));
+        btnActive.setOnClickListener(v -> updateFilter("Active")); // Internally mapped to "Scheduled"
         btnResolved.setOnClickListener(v -> updateFilter("Resolved"));
     }
 
@@ -142,7 +142,7 @@ public class VetCasesActivity extends AppCompatActivity {
     private void updateFilterUI() {
         updateButtonStyle(btnAll, currentFilter.equals("All"));
         updateButtonStyle(btnPending, currentFilter.equals("Pending"));
-        updateButtonStyle(btnActive, currentFilter.equals("Investigating"));
+        updateButtonStyle(btnActive, currentFilter.equals("Active"));
         updateButtonStyle(btnResolved, currentFilter.equals("Resolved"));
     }
 
@@ -162,7 +162,14 @@ public class VetCasesActivity extends AppCompatActivity {
     private void applyFilters(String query) {
         filteredList.clear();
         for (CaseReport report : caseList) {
-            boolean matchesFilter = currentFilter.equals("All") || report.status.equalsIgnoreCase(currentFilter);
+            boolean matchesFilter;
+            if (currentFilter.equals("Active")) {
+                // Now only matches "Scheduled" specifically
+                matchesFilter = report.status.equalsIgnoreCase("Scheduled");
+            } else {
+                matchesFilter = currentFilter.equals("All") || report.status.equalsIgnoreCase(currentFilter);
+            }
+            
             boolean matchesQuery = query.isEmpty() || 
                                  report.farmerName.toLowerCase().contains(query.toLowerCase()) || 
                                  report.animalType.toLowerCase().contains(query.toLowerCase()) ||
@@ -179,8 +186,8 @@ public class VetCasesActivity extends AppCompatActivity {
             
             if (currentFilter.equals("Pending")) {
                 tvEmptyState.setText("No reports pending");
-            } else if (currentFilter.equals("Investigating")) {
-                tvEmptyState.setText("No reports scheduled yet");
+            } else if (currentFilter.equals("Active")) {
+                tvEmptyState.setText("No reports scheduled");
             } else if (currentFilter.equals("Resolved")) {
                 tvEmptyState.setText("No reports resolved");
             } else {
@@ -255,9 +262,9 @@ public class VetCasesActivity extends AppCompatActivity {
             
             // Map status for display
             String displayStatus = report.status;
-            if (report.status.equalsIgnoreCase("Pending")) {
-                displayStatus = "Pending";
-            } else if (report.status.equalsIgnoreCase("Investigating")) {
+            if (report.status.equalsIgnoreCase("Investigating")) {
+                displayStatus = "Info Requested";
+            } else if (report.status.equalsIgnoreCase("Scheduled")) {
                 displayStatus = "Scheduled";
             }
             tvStatus.setText(displayStatus);
@@ -265,7 +272,7 @@ public class VetCasesActivity extends AppCompatActivity {
             if (report.status.equalsIgnoreCase("Pending")) {
                 tvStatus.setBackgroundResource(R.drawable.tag_bg_pending);
                 tvStatus.setTextColor(ContextCompat.getColor(context, R.color.tag_pending_text));
-            } else if (report.status.equalsIgnoreCase("Investigating")) {
+            } else if (report.status.equalsIgnoreCase("Investigating") || report.status.equalsIgnoreCase("Scheduled")) {
                 tvStatus.setBackgroundResource(R.drawable.tag_bg_investigating);
                 tvStatus.setTextColor(ContextCompat.getColor(context, R.color.tag_investigating_text));
             } else if (report.status.equalsIgnoreCase("Resolved")) {

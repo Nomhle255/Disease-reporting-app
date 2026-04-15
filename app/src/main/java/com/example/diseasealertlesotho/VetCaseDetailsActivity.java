@@ -1,6 +1,7 @@
 package com.example.diseasealertlesotho;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -18,6 +19,8 @@ public class VetCaseDetailsActivity extends AppCompatActivity {
     private EditText etAdvice;
     private MaterialButton btnSchedule, btnRequest, btnResolve;
     private SQLiteDatabase db;
+    private String farmerPhone = "";
+    private int reportId = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,8 +53,8 @@ public class VetCaseDetailsActivity extends AppCompatActivity {
         String caseIdStr = getIntent().getStringExtra("CASE_ID");
         if (caseIdStr != null && caseIdStr.startsWith("RPT-")) {
             try {
-                int id = Integer.parseInt(caseIdStr.substring(4));
-                loadReportFromDB(id);
+                reportId = Integer.parseInt(caseIdStr.substring(4));
+                loadReportFromDB(reportId);
             } catch (NumberFormatException e) {
                 Toast.makeText(this, "Invalid Case ID format", Toast.LENGTH_SHORT).show();
             }
@@ -72,6 +75,7 @@ public class VetCaseDetailsActivity extends AppCompatActivity {
                 int count = cursor.getInt(cursor.getColumnIndexOrThrow("count"));
                 String symptoms = cursor.getString(cursor.getColumnIndexOrThrow("symptoms"));
                 String date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
+                farmerPhone = cursor.getString(cursor.getColumnIndexOrThrow("user_phone"));
 
                 tvDetailSubtitle.setText("Reviewing submission from " + (fName != null ? fName + " " + lName : "Unknown Farmer"));
                 tvAnimalType.setText(animal);
@@ -88,11 +92,25 @@ public class VetCaseDetailsActivity extends AppCompatActivity {
 
     private void setupClickListeners() {
         btnSchedule.setOnClickListener(v -> {
+            String advice = etAdvice.getText().toString().trim();
+            if (advice.isEmpty()) {
+                etAdvice.setError("Please provide scheduling details (e.g., date/time).");
+                return;
+            }
+            saveResponse(reportId, farmerPhone, advice, "Scheduled");
             Toast.makeText(this, "Farm visit scheduled. Notification sent to farmer.", Toast.LENGTH_SHORT).show();
+            finish();
         });
 
         btnRequest.setOnClickListener(v -> {
-            Toast.makeText(this, "Info request sent. Farmer asked to provide more details/photos.", Toast.LENGTH_SHORT).show();
+            String advice = etAdvice.getText().toString().trim();
+            if (advice.isEmpty()) {
+                etAdvice.setError("Please type the information or message you are requesting from the farmer.");
+                return;
+            }
+            saveResponse(reportId, farmerPhone, advice, "Investigating");
+            Toast.makeText(this, "Information request sent to farmer.", Toast.LENGTH_SHORT).show();
+            finish();
         });
 
         btnResolve.setOnClickListener(v -> {
@@ -102,12 +120,7 @@ public class VetCaseDetailsActivity extends AppCompatActivity {
                 return;
             }
 
-            String caseIdStr = getIntent().getStringExtra("CASE_ID");
-            if (caseIdStr != null && caseIdStr.startsWith("RPT-")) {
-                int id = Integer.parseInt(caseIdStr.substring(4));
-                updateStatus(id, "Resolved");
-            }
-
+            saveResponse(reportId, farmerPhone, advice, "Resolved");
             Toast.makeText(this, "Response submitted. Case marked as Resolved.", Toast.LENGTH_LONG).show();
             finish();
         });
@@ -117,11 +130,21 @@ public class VetCaseDetailsActivity extends AppCompatActivity {
         });
     }
 
-    private void updateStatus(int id, String status) {
+    private void saveResponse(int rId, String fPhone, String response, String status) {
         try {
-            db.execSQL("UPDATE reports SET status = ? WHERE id = ?", new Object[]{status, id});
+            SharedPreferences prefs = getSharedPreferences("UserSession", MODE_PRIVATE);
+            String vetPhone = prefs.getString("phone", "");
+
+            // Insert into responses table
+            db.execSQL("INSERT INTO responses (report_id, vet_phone, farmer_phone, response, status) VALUES (?, ?, ?, ?, ?)",
+                    new Object[]{rId, vetPhone, fPhone, response, status});
+
+            // Update status in reports table
+            db.execSQL("UPDATE reports SET status = ? WHERE id = ?", new Object[]{status, rId});
+            
         } catch (Exception e) {
             e.printStackTrace();
+            Toast.makeText(this, "Error saving response: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }
 

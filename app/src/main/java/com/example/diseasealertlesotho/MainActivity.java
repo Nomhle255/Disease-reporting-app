@@ -76,6 +76,17 @@ public class MainActivity extends AppCompatActivity {
                 "date VARCHAR, " +
                 "photo BLOB, " +
                 "status VARCHAR DEFAULT 'Pending');");
+
+        db.execSQL("CREATE TABLE IF NOT EXISTS responses(" +
+                "response_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "report_id INTEGER, " +
+                "vet_phone VARCHAR, " +
+                "farmer_phone VARCHAR, " +
+                "response TEXT, " +
+                "status VARCHAR DEFAULT 'Resolved', " +
+                "FOREIGN KEY(report_id) REFERENCES reports(id), " +
+                "FOREIGN KEY(vet_phone) REFERENCES users(phone), " +
+                "FOREIGN KEY(farmer_phone) REFERENCES users(phone));");
         
         // Ensure status column exists if table was created previously
         try {
