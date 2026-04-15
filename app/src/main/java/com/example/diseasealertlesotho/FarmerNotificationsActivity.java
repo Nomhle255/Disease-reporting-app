@@ -2,6 +2,9 @@ package com.example.diseasealertlesotho;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,11 +13,9 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -24,10 +25,11 @@ import java.util.List;
 
 public class FarmerNotificationsActivity extends AppCompatActivity {
 
-    private ListView lvToday, lvYesterday;
-    private NotificationAdapter adapterToday, adapterYesterday;
+    private ListView lvToday;
+    private NotificationAdapter adapterToday;
     private List<NotificationItem> todayList = new ArrayList<>();
-    private List<NotificationItem> yesterdayList = new ArrayList<>();
+    private SQLiteDatabase db;
+    private String userPhone;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,63 +46,78 @@ public class FarmerNotificationsActivity extends AppCompatActivity {
             });
         }
 
+        SharedPreferences sp = getSharedPreferences("UserSession", MODE_PRIVATE);
+        userPhone = sp.getString("phone", "");
+
+        db = openOrCreateDatabase("DiseaseAlertDB", Context.MODE_PRIVATE, null);
+
         initViews();
-        loadMockData();
+        loadNotifications();
         setupNavigation();
     }
 
     private void initViews() {
         lvToday = findViewById(R.id.lv_notifications_today);
-        lvYesterday = findViewById(R.id.lv_notifications_yesterday);
-
+        // We will use one list for all notifications for now
         adapterToday = new NotificationAdapter(this, todayList);
-        adapterYesterday = new NotificationAdapter(this, yesterdayList);
-
         lvToday.setAdapter(adapterToday);
-        lvYesterday.setAdapter(adapterYesterday);
+        
+        // Hide Yesterday label if not using it for now
+        TextView tvYesterday = findViewById(R.id.tv_yesterday_label);
+        if (tvYesterday != null) tvYesterday.setVisibility(View.GONE);
+        ListView lvYesterday = findViewById(R.id.lv_notifications_yesterday);
+        if (lvYesterday != null) lvYesterday.setVisibility(View.GONE);
     }
 
-    private void loadMockData() {
-        // Today's notifications
-        todayList.add(new NotificationItem(
-                "Disease Alert — Leribe",
-                "FMD outbreak detected. Isolate cattle and restrict movement. — Dr. Nthabiseng · 2h ago",
-                android.R.drawable.ic_dialog_alert,
-                "#E53935"
-        ));
-        todayList.add(new NotificationItem(
-                "Vet Responded — RPT-045",
-                "Isolate affected cattle immediately. Farm visit scheduled for 12 April. · 3h ago",
-                android.R.drawable.ic_menu_agenda, // Placeholder for vet icon
-                "#1E88E5"
-        ));
+    private void loadNotifications() {
+        todayList.clear();
+        try {
+            String query = "SELECT res.*, u.firstname, u.lastname FROM responses res " +
+                          "LEFT JOIN users u ON res.vet_phone = u.phone " +
+                          "WHERE res.farmer_phone = ? " +
+                          "ORDER BY res.response_id DESC";
+            
+            Cursor cursor = db.rawQuery(query, new String[]{userPhone});
+            
+            if (cursor.moveToFirst()) {
+                do {
+                    String status = cursor.getString(cursor.getColumnIndexOrThrow("status"));
+                    String response = cursor.getString(cursor.getColumnIndexOrThrow("response"));
+                    String vFname = cursor.getString(cursor.getColumnIndexOrThrow("firstname"));
+                    String vLname = cursor.getString(cursor.getColumnIndexOrThrow("lastname"));
+                    String reportId = "RPT-" + String.format("%03d", cursor.getInt(cursor.getColumnIndexOrThrow("report_id")));
+                    
+                    String title;
+                    int icon;
+                    String color;
 
-        // Yesterday's notifications
-        yesterdayList.add(new NotificationItem(
-                "Case Resolved — RPT-038",
-                "Your goat respiratory case has been resolved. Follow treatment plan provided. · 1d ago",
-                android.R.drawable.checkbox_on_background,
-                "#43A047"
-        ));
-        yesterdayList.add(new NotificationItem(
-                "Report Received — RPT-031",
-                "Your poultry death report has been received and is pending vet review. · 1d ago",
-                android.R.drawable.ic_menu_edit,
-                "#FB8C00"
-        ));
-        yesterdayList.add(new NotificationItem(
-                "More Info Requested",
-                "Vet requests additional photos of poultry housing for RPT-031. · 1d ago",
-                android.R.drawable.ic_menu_camera,
-                "#1E88E5"
-        ));
+                    if ("Investigating".equalsIgnoreCase(status)) {
+                        title = "More Info Requested — " + reportId;
+                        icon = android.R.drawable.ic_menu_camera;
+                        color = "#1E88E5";
+                    } else if ("Scheduled".equalsIgnoreCase(status)) {
+                        title = "Farm Visit Scheduled — " + reportId;
+                        icon = android.R.drawable.ic_menu_agenda;
+                        color = "#1976D2";
+                    } else {
+                        title = "Advice Provided — " + reportId;
+                        icon = android.R.drawable.checkbox_on_background;
+                        color = "#43A047";
+                    }
 
+                    String vetName = (vFname != null ? "Dr. " + vFname : "A Vet");
+                    String message = response + " — " + vetName;
+
+                    todayList.add(new NotificationItem(title, message, icon, color));
+                } while (cursor.moveToNext());
+            }
+            cursor.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        
         adapterToday.notifyDataSetChanged();
-        adapterYesterday.notifyDataSetChanged();
-
-        // Adjust ListView height dynamically for Nested Scroll (Simplified)
         setListViewHeightBasedOnChildren(lvToday);
-        setListViewHeightBasedOnChildren(lvYesterday);
     }
 
     private void setupNavigation() {

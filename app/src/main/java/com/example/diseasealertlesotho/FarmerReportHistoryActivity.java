@@ -77,27 +77,44 @@ public class FarmerReportHistoryActivity extends AppCompatActivity {
     private void loadReports() {
         reportList.clear();
         try {
-            Cursor cursor = db.rawQuery("SELECT * FROM reports WHERE user_phone = ? ORDER BY id DESC", new String[]{userPhone});
+            // Updated query to fetch the latest response and the vet's name
+            String query = "SELECT r.*, res.response as vet_advice, v.firstname as v_fname, v.lastname as v_lname " +
+                          "FROM reports r " +
+                          "LEFT JOIN (SELECT * FROM responses GROUP BY report_id HAVING MAX(response_id)) res ON r.id = res.report_id " +
+                          "LEFT JOIN users v ON res.vet_phone = v.phone " +
+                          "WHERE r.user_phone = ? " +
+                          "ORDER BY r.id DESC";
+            
+            Cursor cursor = db.rawQuery(query, new String[]{userPhone});
             if (cursor.moveToFirst()) {
                 do {
                     HistoryReport report = new HistoryReport();
-                    report.reportId = "REP-" + cursor.getInt(cursor.getColumnIndexOrThrow("id"));
+                    report.reportId = "REP-" + String.format("%03d", cursor.getInt(cursor.getColumnIndexOrThrow("id")));
                     report.animalType = cursor.getString(cursor.getColumnIndexOrThrow("animal_type"));
                     report.district = "Maseru"; // Placeholder
                     report.symptoms = cursor.getString(cursor.getColumnIndexOrThrow("symptoms"));
                     report.date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
                     report.status = cursor.getString(cursor.getColumnIndexOrThrow("status"));
+                    
+                    String advice = cursor.getString(cursor.getColumnIndexOrThrow("vet_advice"));
+                    String vFname = cursor.getString(cursor.getColumnIndexOrThrow("v_fname"));
+                    String vLname = cursor.getString(cursor.getColumnIndexOrThrow("v_lname"));
 
                     if (report.status == null) report.status = "Pending";
 
-                    if (report.status.equalsIgnoreCase("Investigating")) {
-                        report.footerMessage = "Vet requested more info · Please check alerts";
-                    } else if (report.status.equalsIgnoreCase("Scheduled")) {
-                        report.footerMessage = "Vet responded · Farm visit scheduled";
-                    } else if (report.status.equalsIgnoreCase("Resolved")) {
-                        report.footerMessage = "Case closed · Treatment advised";
+                    if (advice != null && !advice.isEmpty()) {
+                        String vetName = (vFname != null ? "Dr. " + vFname + ": " : "Vet: ");
+                        report.footerMessage = vetName + advice;
                     } else {
-                        report.footerMessage = "Awaiting vet review";
+                        if (report.status.equalsIgnoreCase("Investigating")) {
+                            report.footerMessage = "Vet requested more info · Please check alerts";
+                        } else if (report.status.equalsIgnoreCase("Scheduled")) {
+                            report.footerMessage = "Vet responded · Farm visit scheduled";
+                        } else if (report.status.equalsIgnoreCase("Resolved")) {
+                            report.footerMessage = "Case closed · Treatment advised";
+                        } else {
+                            report.footerMessage = "Awaiting vet review";
+                        }
                     }
 
                     reportList.add(report);

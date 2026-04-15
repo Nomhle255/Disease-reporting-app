@@ -84,11 +84,12 @@ public class MainActivity extends AppCompatActivity {
                 "farmer_phone VARCHAR, " +
                 "response TEXT, " +
                 "status VARCHAR DEFAULT 'Resolved', " +
+                "date VARCHAR, " +
                 "FOREIGN KEY(report_id) REFERENCES reports(id), " +
                 "FOREIGN KEY(vet_phone) REFERENCES users(phone), " +
                 "FOREIGN KEY(farmer_phone) REFERENCES users(phone));");
         
-        // Ensure status column exists if table was created previously
+        // Ensure columns exist if table was created previously
         try {
             db.execSQL("ALTER TABLE reports ADD COLUMN status VARCHAR DEFAULT 'Pending'");
         } catch (Exception ignored) {}
