@@ -2,6 +2,7 @@ package com.example.diseasealertlesotho;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -11,7 +12,6 @@ import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -34,6 +34,7 @@ public class FarmerReportHistoryActivity extends AppCompatActivity {
     private List<HistoryReport> filteredList = new ArrayList<>();
     private SQLiteDatabase db;
     private String currentFilter = "All";
+    private String userPhone;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +50,9 @@ public class FarmerReportHistoryActivity extends AppCompatActivity {
                 return insets;
             });
         }
+
+        SharedPreferences sp = getSharedPreferences("UserSession", MODE_PRIVATE);
+        userPhone = sp.getString("phone", "");
 
         initViews();
         setupDatabase();
@@ -72,29 +76,26 @@ public class FarmerReportHistoryActivity extends AppCompatActivity {
 
     private void loadReports() {
         reportList.clear();
-        // In a real app, we would filter by the current user's ID
         try {
-            Cursor cursor = db.rawQuery("SELECT * FROM reports ORDER BY id DESC", null);
+            Cursor cursor = db.rawQuery("SELECT * FROM reports WHERE user_phone = ? ORDER BY id DESC", new String[]{userPhone});
             if (cursor.moveToFirst()) {
                 do {
                     HistoryReport report = new HistoryReport();
-                    report.reportId = cursor.getString(cursor.getColumnIndexOrThrow("report_id"));
+                    report.reportId = "REP-" + cursor.getInt(cursor.getColumnIndexOrThrow("id"));
                     report.animalType = cursor.getString(cursor.getColumnIndexOrThrow("animal_type"));
-                    report.district = cursor.getString(cursor.getColumnIndexOrThrow("district"));
+                    report.district = "Maseru"; // Placeholder
                     report.symptoms = cursor.getString(cursor.getColumnIndexOrThrow("symptoms"));
                     report.date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
                     report.status = cursor.getString(cursor.getColumnIndexOrThrow("status"));
 
-                    // Mocking some footer messages based on status
+                    if (report.status == null) report.status = "Pending";
+
                     if (report.status.equalsIgnoreCase("Investigating")) {
-                        report.footerMessage = "Vet responded · Farm visit scheduled 12 Apr";
-                        report.progress = 60;
+                        report.footerMessage = "Vet responded · Farm visit scheduled soon";
                     } else if (report.status.equalsIgnoreCase("Resolved")) {
-                        report.footerMessage = "Case closed · Treatment advised · No visit needed";
-                        report.progress = 100;
+                        report.footerMessage = "Case closed · Treatment advised";
                     } else {
                         report.footerMessage = "Awaiting vet review";
-                        report.progress = 20;
                     }
 
                     reportList.add(report);
@@ -102,7 +103,7 @@ public class FarmerReportHistoryActivity extends AppCompatActivity {
             }
             cursor.close();
         } catch (Exception e) {
-            // Table might not exist yet or no records found
+            e.printStackTrace();
         }
         applyFilter();
     }
@@ -134,7 +135,6 @@ public class FarmerReportHistoryActivity extends AppCompatActivity {
             }
         }
         
-        // Show/Hide empty state
         if (filteredList.isEmpty()) {
             emptyState.setVisibility(View.VISIBLE);
             listView.setVisibility(View.GONE);
@@ -148,23 +148,27 @@ public class FarmerReportHistoryActivity extends AppCompatActivity {
 
     private void setupNavigation() {
         findViewById(R.id.layout_home_tab).setOnClickListener(v -> {
-            startActivity(new Intent(this, FarmerDashboardActivity.class));
             finish();
         });
         findViewById(R.id.layout_report_btn).setOnClickListener(v -> {
-            startActivity(new Intent(this, ReportDiseaseActivity.class));
+            Intent intent = new Intent(FarmerReportHistoryActivity.this, ReportDiseaseActivity.class);
+            startActivity(intent);
         });
         findViewById(R.id.layout_alerts_tab).setOnClickListener(v -> {
-            Toast.makeText(this, "Alerts clicked", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(FarmerReportHistoryActivity.this, FarmerNotificationsActivity.class);
+            startActivity(intent);
+            finish();
         });
         findViewById(R.id.layout_profile_tab).setOnClickListener(v -> {
-            Toast.makeText(this, "Profile clicked", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(FarmerReportHistoryActivity.this, FarmerDashboardActivity.class);
+            intent.putExtra("OPEN_FRAGMENT", "PROFILE");
+            startActivity(intent);
+            finish();
         });
     }
 
     static class HistoryReport {
         String reportId, animalType, district, symptoms, date, status, footerMessage;
-        int progress;
     }
 
     private class ReportHistoryAdapter extends BaseAdapter {
@@ -194,16 +198,13 @@ public class FarmerReportHistoryActivity extends AppCompatActivity {
             TextView tvMeta = convertView.findViewById(R.id.tv_report_meta);
             TextView tvStatus = convertView.findViewById(R.id.tv_status_badge);
             TextView tvFooter = convertView.findViewById(R.id.tv_footer_message);
-            ProgressBar pb = convertView.findViewById(R.id.pb_status);
             ImageView ivIcon = convertView.findViewById(R.id.iv_animal_icon);
 
             tvTitle.setText(report.animalType + " — " + report.symptoms);
             tvMeta.setText(report.reportId + " · " + report.date + " · " + report.district);
             tvStatus.setText(report.status);
             tvFooter.setText(report.footerMessage);
-            pb.setProgress(report.progress);
 
-            // Styling status badge
             if (report.status.equalsIgnoreCase("Pending")) {
                 tvStatus.setBackgroundTintList(ContextCompat.getColorStateList(context, R.color.tag_pending_bg));
                 tvStatus.setTextColor(ContextCompat.getColor(context, R.color.tag_pending_text));
@@ -215,12 +216,15 @@ public class FarmerReportHistoryActivity extends AppCompatActivity {
                 tvStatus.setTextColor(ContextCompat.getColor(context, R.color.tag_resolved_text));
             }
 
-            // Animal Icons
-            if (report.animalType.contains("Cattle")) ivIcon.setImageResource(android.R.drawable.ic_menu_gallery); // Placeholder
-            else if (report.animalType.contains("Goat")) ivIcon.setImageResource(android.R.drawable.ic_menu_gallery);
-            else if (report.animalType.contains("Poultry")) ivIcon.setImageResource(android.R.drawable.ic_menu_gallery);
+            ivIcon.setImageResource(android.R.drawable.ic_menu_gallery);
 
             return convertView;
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadReports();
     }
 }

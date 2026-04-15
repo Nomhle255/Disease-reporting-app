@@ -3,18 +3,24 @@ package com.example.diseasealertlesotho;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 
 public class FarmerDashboardActivity extends AppCompatActivity {
 
-    View btnReport;
-    TextView tvUserName, tvTotalReports;
+    private LinearLayout layoutHome, layoutReports, layoutAlerts, layoutProfile;
+    private ImageView ivHome, ivReports, ivAlerts, ivProfile;
+    private TextView tvHome, tvReports, tvAlerts, tvProfile;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,34 +37,105 @@ public class FarmerDashboardActivity extends AppCompatActivity {
             });
         }
 
-        tvUserName = findViewById(R.id.tv_user_name);
-        tvTotalReports = findViewById(R.id.tv_total_reports);
-        
-        // Retrieve data from Intent
-        String userName = getIntent().getStringExtra("USER_NAME");
-        String totalReports = getIntent().getStringExtra("TOTAL_REPORTS");
-        final String userEmail = getIntent().getStringExtra("USER_EMAIL"); // Need this to pass to report activity
+        initViews();
+        setupNavigation();
 
-        if (userName != null && !userName.isEmpty()) {
-            tvUserName.setText(userName);
+        // Check if we need to open a specific fragment
+        String openFragment = getIntent().getStringExtra("OPEN_FRAGMENT");
+        if ("PROFILE".equals(openFragment)) {
+            loadFragment(new ProfileFragment(), "PROFILE");
+            updateNavUI("PROFILE");
+        } else {
+            // Load Home Fragment by default
+            loadFragment(new HomeFragment(), "HOME");
+            updateNavUI("HOME");
         }
-        
-        if (totalReports != null) {
-            tvTotalReports.setText(totalReports);
-        }
+    }
 
-        btnReport = findViewById(R.id.btn_report_nav);
-        btnReport.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(FarmerDashboardActivity.this, ReportDiseaseActivity.class);
-                intent.putExtra("USER_EMAIL", userEmail);
-                startActivity(intent);
-            }
+    private void initViews() {
+        layoutHome = findViewById(R.id.layout_home_tab);
+        layoutReports = findViewById(R.id.layout_reports_tab);
+        layoutAlerts = findViewById(R.id.layout_alerts_tab);
+        layoutProfile = findViewById(R.id.layout_profile_tab);
+
+        ivHome = findViewById(R.id.iv_home_icon);
+        ivReports = findViewById(R.id.iv_reports_icon);
+        ivAlerts = findViewById(R.id.iv_alerts_icon);
+        ivProfile = findViewById(R.id.iv_profile_icon);
+
+        tvHome = findViewById(R.id.tv_home_text);
+        tvReports = findViewById(R.id.tv_reports_text);
+        tvAlerts = findViewById(R.id.tv_alerts_text);
+        tvProfile = findViewById(R.id.tv_profile_text);
+    }
+
+    private void setupNavigation() {
+        layoutHome.setOnClickListener(v -> {
+            loadFragment(new HomeFragment(), "HOME");
+            updateNavUI("HOME");
         });
-        findViewById(R.id.layout_reports_tab).setOnClickListener(v -> {
-            Intent intent = new Intent(FarmerDashboardActivity.this, FarmerReportHistoryActivity.class);
+
+        layoutReports.setOnClickListener(v -> {
+            startActivity(new Intent(this, FarmerReportHistoryActivity.class));
+        });
+
+        layoutAlerts.setOnClickListener(v -> {
+            startActivity(new Intent(this, FarmerNotificationsActivity.class));
+        });
+
+        layoutProfile.setOnClickListener(v -> {
+            loadFragment(new ProfileFragment(), "PROFILE");
+            updateNavUI("PROFILE");
+        });
+
+        findViewById(R.id.btn_report_nav).setOnClickListener(v -> {
+            Intent intent = new Intent(this, ReportDiseaseActivity.class);
             startActivity(intent);
         });
+    }
+
+    private void loadFragment(Fragment fragment, String tag) {
+        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        transaction.replace(R.id.fragment_container, fragment, tag);
+        transaction.commit();
+    }
+
+    private void updateNavUI(String activeTab) {
+        // Reset all to grey
+        int grey = ContextCompat.getColor(this, R.color.text_hint);
+        int green = ContextCompat.getColor(this, R.color.primary_green);
+
+        ivHome.setColorFilter(grey);
+        ivReports.setColorFilter(grey);
+        ivAlerts.setColorFilter(grey);
+        ivProfile.setColorFilter(grey);
+
+        tvHome.setTextColor(grey);
+        tvReports.setTextColor(grey);
+        tvAlerts.setTextColor(grey);
+        tvProfile.setTextColor(grey);
+
+        // Highlight active
+        switch (activeTab) {
+            case "HOME":
+                ivHome.setColorFilter(green);
+                tvHome.setTextColor(green);
+                break;
+            case "PROFILE":
+                ivProfile.setColorFilter(green);
+                tvProfile.setTextColor(green);
+                break;
+        }
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        String openFragment = intent.getStringExtra("OPEN_FRAGMENT");
+        if ("PROFILE".equals(openFragment)) {
+            loadFragment(new ProfileFragment(), "PROFILE");
+            updateNavUI("PROFILE");
+        }
     }
 }

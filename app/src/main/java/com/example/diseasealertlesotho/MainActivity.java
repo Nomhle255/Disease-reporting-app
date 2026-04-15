@@ -66,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
                 "email VARCHAR, " +
                 "role VARCHAR, " +
                 "password VARCHAR);");
+
         db.execSQL("CREATE TABLE IF NOT EXISTS reports(" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "user_phone VARCHAR, " +
@@ -73,7 +74,13 @@ public class MainActivity extends AppCompatActivity {
                 "count INTEGER, " +
                 "symptoms TEXT, " +
                 "date VARCHAR, " +
-                "photo BLOB);");
+                "photo BLOB, " +
+                "status VARCHAR DEFAULT 'Pending');");
+        
+        // Ensure status column exists if table was created previously
+        try {
+            db.execSQL("ALTER TABLE reports ADD COLUMN status VARCHAR DEFAULT 'Pending'");
+        } catch (Exception ignored) {}
     }
 
     private void initViews() {
@@ -83,6 +90,7 @@ public class MainActivity extends AppCompatActivity {
         etPhone = findViewById(R.id.et_phone);
         etPassword = findViewById(R.id.et_password);
         etConfirmPassword = findViewById(R.id.et_confirm_password);
+
         actRole = findViewById(R.id.act_role);
         btnCreateAccount = findViewById(R.id.btn_create_account);
         tvLogin = findViewById(R.id.tv_login);
@@ -112,15 +120,6 @@ public class MainActivity extends AppCompatActivity {
         }
         cursor.close();
 
-        // Check for duplicate email
-        cursor = db.rawQuery("SELECT * FROM users WHERE email = ?", new String[]{email});
-        if (cursor.getCount() > 0) {
-            showMessage("Error", "User with this email already exists");
-            cursor.close();
-            return;
-        }
-        cursor.close();
-
         try {
             db.execSQL("INSERT INTO users VALUES(?, ?, ?, ?, ?, ?)",
                     new Object[]{phone, fName, lName, email, role, pwd});
@@ -133,43 +132,28 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private boolean validateForm() {
-        String firstName = etFirstName.getText().toString().trim();
-        String lastName = etLastName.getText().toString().trim();
-        String phone = etPhone.getText().toString().trim();
-        String email = etEmail.getText().toString().trim();
-        String password = etPassword.getText().toString();
-        String confirmPassword = etConfirmPassword.getText().toString();
-
-        if (firstName.isEmpty()) {
-            etFirstName.setError("First Name is required");
+        if (etFirstName.getText().toString().trim().isEmpty()) {
+            etFirstName.setError("Required");
             return false;
         }
-        if (lastName.isEmpty()) {
-            etLastName.setError("Last Name is required");
+        if (etLastName.getText().toString().trim().isEmpty()) {
+            etLastName.setError("Required");
             return false;
         }
-        if (phone.isEmpty()) {
-            etPhone.setError("Phone Number is required");
+        if (etPhone.getText().toString().trim().isEmpty()) {
+            etPhone.setError("Required");
             return false;
         }
-        if (email.isEmpty()) {
-            etEmail.setError("Email is required");
+        if (etEmail.getText().toString().trim().isEmpty()) {
+            etEmail.setError("Required");
             return false;
         }
-        if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            etEmail.setError("Please enter a valid email");
+        if (etPassword.getText().toString().length() < 6) {
+            etPassword.setError("Min 6 chars");
             return false;
         }
-        if (password.length() < 6) {
-            etPassword.setError("Password must be at least 6 characters");
-            return false;
-        }
-        if (!password.equals(confirmPassword)) {
-            etConfirmPassword.setError("Passwords do not match");
-            return false;
-        }
-        if (actRole.getText().toString().isEmpty()) {
-            Toast.makeText(this, "Please select a role", Toast.LENGTH_SHORT).show();
+        if (!etPassword.getText().toString().equals(etConfirmPassword.getText().toString())) {
+            etConfirmPassword.setError("Mismatch");
             return false;
         }
         return true;

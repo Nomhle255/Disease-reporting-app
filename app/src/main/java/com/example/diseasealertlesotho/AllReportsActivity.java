@@ -15,6 +15,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -57,7 +58,7 @@ public class AllReportsActivity extends AppCompatActivity {
         setupSearch();
         setupFilters();
         setupNavigation();
-        updateSummaryCards();
+        updateSummaryStats();
 
         findViewById(R.id.tv_back_dashboard).setOnClickListener(v -> finish());
     }
@@ -71,68 +72,68 @@ public class AllReportsActivity extends AppCompatActivity {
 
     private void setupDatabase() {
         db = openOrCreateDatabase("DiseaseAlertDB", Context.MODE_PRIVATE, null);
-        // Ensure reports table exists for demo purposes if not already created elsewhere
-        db.execSQL("CREATE TABLE IF NOT EXISTS reports (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                "report_id TEXT, " +
-                "farmer_name TEXT, " +
-                "animal_type TEXT, " +
-                "district TEXT, " +
-                "animal_count INTEGER, " +
-                "symptoms TEXT, " +
-                "date TEXT, " +
-                "assigned_to TEXT, " +
-                "status TEXT)");
-        
-        // Add some sample data if table is empty
-        Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM reports", null);
-        cursor.moveToFirst();
-        if (cursor.getInt(0) == 0) {
-            db.execSQL("INSERT INTO reports (report_id, farmer_name, animal_type, district, animal_count, symptoms, date, assigned_to, status) VALUES " +
-                    "('RPT-045', 'Thabo Mokete', 'Cattle', 'Maseru', 5, 'FMD symptoms', '10 Apr 2026', 'Dr. Nthabiseng', 'Investigating')," +
-                    "('RPT-044', 'Lineo Tšepe', 'Sheep', 'Leribe', 12, 'Skin lesions', '9 Apr 2026', 'Unassigned', 'Pending')," +
-                    "('RPT-043', 'Rethabile Sello', 'Poultry', 'Berea', 30, 'Sudden deaths', '9 Apr 2026', 'Visit scheduled 12 Apr', 'Visit Scheduled')," +
-                    "('RPT-042', 'Mpho Ramoeli', 'Goats', 'Mafeteng', 8, 'Respiratory', '5 Apr 2026', 'Case closed', 'Resolved')");
-        }
-        cursor.close();
     }
 
     private void loadReports() {
         reportList.clear();
-        Cursor cursor = db.rawQuery("SELECT * FROM reports ORDER BY id DESC", null);
-        if (cursor.moveToFirst()) {
-            do {
-                Report report = new Report();
-                report.reportId = cursor.getString(cursor.getColumnIndexOrThrow("report_id"));
-                report.farmerName = cursor.getString(cursor.getColumnIndexOrThrow("farmer_name"));
-                report.animalType = cursor.getString(cursor.getColumnIndexOrThrow("animal_type"));
-                report.district = cursor.getString(cursor.getColumnIndexOrThrow("district"));
-                report.animalCount = cursor.getInt(cursor.getColumnIndexOrThrow("animal_count"));
-                report.symptoms = cursor.getString(cursor.getColumnIndexOrThrow("symptoms"));
-                report.date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
-                report.assignedTo = cursor.getString(cursor.getColumnIndexOrThrow("assigned_to"));
-                report.status = cursor.getString(cursor.getColumnIndexOrThrow("status"));
-                reportList.add(report);
-            } while (cursor.moveToNext());
+        try {
+            // Join reports with users to get farmer name
+            String query = "SELECT r.*, u.firstname, u.lastname FROM reports r " +
+                          "LEFT JOIN users u ON r.user_phone = u.phone " +
+                          "ORDER BY r.id DESC";
+            Cursor cursor = db.rawQuery(query, null);
+            
+            if (cursor.moveToFirst()) {
+                do {
+                    Report report = new Report();
+                    report.id = cursor.getInt(cursor.getColumnIndexOrThrow("id"));
+                    report.reportId = "RPT-" + String.format("%03d", report.id);
+                    
+                    String fName = cursor.getString(cursor.getColumnIndexOrThrow("firstname"));
+                    String lName = cursor.getString(cursor.getColumnIndexOrThrow("lastname"));
+                    report.farmerName = (fName != null) ? fName + " " + lName : "Unknown Farmer";
+                    
+                    report.animalType = cursor.getString(cursor.getColumnIndexOrThrow("animal_type"));
+                    report.district = "Maseru"; // Placeholder as district isn't in schema yet
+                    report.animalCount = cursor.getInt(cursor.getColumnIndexOrThrow("count"));
+                    report.symptoms = cursor.getString(cursor.getColumnIndexOrThrow("symptoms"));
+                    report.date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
+                    report.status = cursor.getString(cursor.getColumnIndexOrThrow("status"));
+                    
+                    if (report.status == null) report.status = "Pending";
+                    
+                    reportList.add(report);
+                } while (cursor.moveToNext());
+            }
+            cursor.close();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        cursor.close();
         applyFilters("");
     }
 
-    private void updateSummaryCards() {
-        // Find the summary layout and its children
+    private void updateSummaryStats() {
+        int pending = 0, investigating = 0, resolved = 0;
+        for (Report r : reportList) {
+            if (r.status.equalsIgnoreCase("Pending")) pending++;
+            else if (r.status.equalsIgnoreCase("Investigating")) investigating++;
+            else if (r.status.equalsIgnoreCase("Resolved")) resolved++;
+        }
+
         View layoutSummary = findViewById(R.id.layout_summary);
         if (layoutSummary instanceof ViewGroup) {
             ViewGroup group = (ViewGroup) layoutSummary;
-            
-            setupSummaryCard(group.getChildAt(0), "8", "New", R.color.status_new);
-            setupSummaryCard(group.getChildAt(1), "15", "Active", R.color.status_active);
-            setupSummaryCard(group.getChildAt(2), "5", "Visit", R.color.status_visit);
-            setupSummaryCard(group.getChildAt(3), "35", "Resolved", R.color.status_resolved);
+            setupSummaryCard(group.getChildAt(0), String.valueOf(reportList.size()), "Total", R.color.header_green);
+            setupSummaryCard(group.getChildAt(1), String.valueOf(pending), "Pending", R.color.status_new);
+            setupSummaryCard(group.getChildAt(2), String.valueOf(investigating), "Active", R.color.status_active);
+            setupSummaryCard(group.getChildAt(3), String.valueOf(resolved), "Resolved", R.color.status_resolved);
         }
+        
+        ((TextView)findViewById(R.id.tv_reports_subtitle)).setText(reportList.size() + " total reports across all districts");
     }
 
     private void setupSummaryCard(View card, String count, String label, int colorRes) {
+        if (card == null) return;
         TextView tvCount = card.findViewById(R.id.tv_summary_count);
         TextView tvLabel = card.findViewById(R.id.tv_summary_label);
         tvCount.setText(count);
@@ -144,12 +145,10 @@ public class AllReportsActivity extends AppCompatActivity {
         etSearch.addTextChangedListener(new TextWatcher() {
             @Override
             public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 applyFilters(s.toString());
             }
-
             @Override
             public void afterTextChanged(Editable s) {}
         });
@@ -173,7 +172,7 @@ public class AllReportsActivity extends AppCompatActivity {
             boolean matchesFilter = currentFilter.equals("All") || report.status.equalsIgnoreCase(currentFilter);
             boolean matchesQuery = report.farmerName.toLowerCase().contains(query.toLowerCase()) || 
                                  report.animalType.toLowerCase().contains(query.toLowerCase()) ||
-                                 report.district.toLowerCase().contains(query.toLowerCase());
+                                 report.symptoms.toLowerCase().contains(query.toLowerCase());
             
             if (matchesFilter && matchesQuery) {
                 filteredList.add(report);
@@ -185,7 +184,6 @@ public class AllReportsActivity extends AppCompatActivity {
     private void setupNavigation() {
         View bottomNav = findViewById(R.id.bottom_navigation);
         bottomNav.findViewById(R.id.layout_home_tab).setOnClickListener(v -> {
-            startActivity(new Intent(this, AdminDashboardActivity.class));
             finish();
         });
         bottomNav.findViewById(R.id.layout_users_tab).setOnClickListener(v -> {
@@ -196,14 +194,22 @@ public class AllReportsActivity extends AppCompatActivity {
             startActivity(new Intent(this, StatisticsActivity.class));
             finish();
         });
+        bottomNav.findViewById(R.id.layout_profile_tab).setOnClickListener(v -> {
+            Intent intent = new Intent(this, AdminDashboardActivity.class);
+            intent.putExtra("OPEN_FRAGMENT", "PROFILE");
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(intent);
+            finish();
+        });
 
-        // Set Reports as active
+        // Highlight Reports tab
         ((ImageView)bottomNav.findViewById(R.id.iv_reports_icon)).setColorFilter(ContextCompat.getColor(this, R.color.header_green));
         ((TextView)bottomNav.findViewById(R.id.tv_reports_text)).setTextColor(ContextCompat.getColor(this, R.color.header_green));
     }
 
     static class Report {
-        String reportId, farmerName, animalType, district, symptoms, date, assignedTo, status;
+        int id;
+        String reportId, farmerName, animalType, district, symptoms, date, status;
         int animalCount;
     }
 
@@ -236,13 +242,14 @@ public class AllReportsActivity extends AppCompatActivity {
             TextView tvDetails = convertView.findViewById(R.id.tv_location_details);
             TextView tvAssigned = convertView.findViewById(R.id.tv_assigned_info);
             TextView tvStatus = convertView.findViewById(R.id.tv_status_tag);
-            ImageView ivAnimal = convertView.findViewById(R.id.iv_animal_icon);
 
             tvId.setText(report.reportId);
             tvDate.setText(report.date);
             tvFarmerAnimal.setText(report.farmerName + " — " + report.animalType);
             tvDetails.setText(report.district + " · " + report.animalCount + " animals · " + report.symptoms);
-            tvAssigned.setText(report.assignedTo + (report.status.equals("Investigating") ? " assigned" : ""));
+            
+            // For now, assigned info can just show status-related info
+            tvAssigned.setText("Status updated: " + report.date);
             tvStatus.setText(report.status);
 
             // Dynamic status styling
@@ -255,9 +262,6 @@ public class AllReportsActivity extends AppCompatActivity {
             } else if (report.status.equalsIgnoreCase("Resolved")) {
                 tvStatus.setBackgroundResource(R.drawable.tag_bg_resolved);
                 tvStatus.setTextColor(ContextCompat.getColor(context, R.color.tag_resolved_text));
-            } else {
-                tvStatus.setBackgroundResource(R.drawable.tag_bg_pending); // Default
-                tvStatus.setTextColor(ContextCompat.getColor(context, R.color.tag_pending_text));
             }
 
             return convertView;

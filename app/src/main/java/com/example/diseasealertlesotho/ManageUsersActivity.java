@@ -5,13 +5,10 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -28,7 +25,7 @@ import java.util.List;
 public class ManageUsersActivity extends AppCompatActivity {
 
     private ListView listView;
-    private EditText etSearch;
+    private TextView tvEmptyView;
     private UserAdapter adapter;
     private List<User> userList = new ArrayList<>();
     private List<User> filteredList = new ArrayList<>();
@@ -53,16 +50,27 @@ public class ManageUsersActivity extends AppCompatActivity {
         initViews();
         setupDatabase();
         loadUsers();
-        setupSearch();
         setupFilters();
         setupNavigation();
 
         findViewById(R.id.tv_back_dashboard).setOnClickListener(v -> finish());
+        
+        View btnAddUser = findViewById(R.id.btn_add_user);
+        if (btnAddUser != null) {
+            btnAddUser.setOnClickListener(v -> {
+                Intent intent = new Intent(ManageUsersActivity.this, MainActivity.class);
+                startActivity(intent);
+            });
+        }
     }
 
     private void initViews() {
         listView = findViewById(R.id.list_users);
-        etSearch = findViewById(R.id.et_search_user);
+        tvEmptyView = findViewById(R.id.tv_empty_view);
+        
+        // Set the empty view for the ListView
+        listView.setEmptyView(tvEmptyView);
+        
         adapter = new UserAdapter(this, filteredList);
         listView.setAdapter(adapter);
     }
@@ -73,35 +81,24 @@ public class ManageUsersActivity extends AppCompatActivity {
 
     private void loadUsers() {
         userList.clear();
-        Cursor cursor = db.rawQuery("SELECT * FROM users", null);
-        if (cursor.moveToFirst()) {
-            do {
-                User user = new User();
-                user.email = cursor.getString(cursor.getColumnIndexOrThrow("email"));
-                user.firstName = cursor.getString(cursor.getColumnIndexOrThrow("firstname"));
-                user.lastName = cursor.getString(cursor.getColumnIndexOrThrow("lastname"));
-                user.role = cursor.getString(cursor.getColumnIndexOrThrow("role"));
-                user.phone = cursor.getString(cursor.getColumnIndexOrThrow("phone"));
-                userList.add(user);
-            } while (cursor.moveToNext());
-        }
-        cursor.close();
-        applyFilters("");
-    }
-
-    private void setupSearch() {
-        etSearch.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                applyFilters(s.toString());
+        try {
+            Cursor cursor = db.rawQuery("SELECT * FROM users", null);
+            if (cursor.moveToFirst()) {
+                do {
+                    User user = new User();
+                    user.email = cursor.getString(cursor.getColumnIndexOrThrow("email"));
+                    user.firstName = cursor.getString(cursor.getColumnIndexOrThrow("firstname"));
+                    user.lastName = cursor.getString(cursor.getColumnIndexOrThrow("lastname"));
+                    user.role = cursor.getString(cursor.getColumnIndexOrThrow("role"));
+                    user.phone = cursor.getString(cursor.getColumnIndexOrThrow("phone"));
+                    userList.add(user);
+                } while (cursor.moveToNext());
             }
-
-            @Override
-            public void afterTextChanged(Editable s) {}
-        });
+            cursor.close();
+        } catch (Exception e) {
+            Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+        applyFilters();
     }
 
     private void setupFilters() {
@@ -113,23 +110,36 @@ public class ManageUsersActivity extends AppCompatActivity {
 
     private void updateFilter(String filter) {
         currentFilter = filter;
-        applyFilters(etSearch.getText().toString());
-
-        // Visual feedback for selected filter would go here (changing button background)
+        applyFilters();
     }
 
-    private void applyFilters(String query) {
+    private void applyFilters() {
         filteredList.clear();
         for (User user : userList) {
             boolean matchesFilter = currentFilter.equals("All") || user.role.equalsIgnoreCase(currentFilter);
-            boolean matchesQuery = user.firstName.toLowerCase().contains(query.toLowerCase()) || 
-                                 user.lastName.toLowerCase().contains(query.toLowerCase()) ||
-                                 user.email.toLowerCase().contains(query.toLowerCase());
-            
-            if (matchesFilter && matchesQuery) {
+            if (matchesFilter) {
                 filteredList.add(user);
             }
         }
+
+        // Update empty view text based on filter
+        if (filteredList.isEmpty()) {
+            switch (currentFilter) {
+                case "Farmer":
+                    tvEmptyView.setText("No farmer registered yet");
+                    break;
+                case "Vet":
+                    tvEmptyView.setText("No vet registered yet");
+                    break;
+                case "Admin":
+                    tvEmptyView.setText("No admin registered yet");
+                    break;
+                default:
+                    tvEmptyView.setText("No users registered yet");
+                    break;
+            }
+        }
+
         adapter.notifyDataSetChanged();
     }
 
@@ -138,23 +148,23 @@ public class ManageUsersActivity extends AppCompatActivity {
             Intent intent = new Intent(ManageUsersActivity.this, AdminDashboardActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             startActivity(intent);
-            finish();
         });
 
         findViewById(R.id.layout_stats_tab).setOnClickListener(v -> {
             Intent intent = new Intent(ManageUsersActivity.this, StatisticsActivity.class);
             startActivity(intent);
-            finish();
         });
 
         findViewById(R.id.layout_reports_tab).setOnClickListener(v -> {
             Intent intent = new Intent(ManageUsersActivity.this, AllReportsActivity.class);
             startActivity(intent);
-            finish();
         });
 
         findViewById(R.id.layout_profile_tab).setOnClickListener(v -> {
-            Toast.makeText(this, "Profile clicked", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(ManageUsersActivity.this, AdminDashboardActivity.class);
+            intent.putExtra("OPEN_FRAGMENT", "PROFILE");
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            startActivity(intent);
         });
     }
 
@@ -194,14 +204,20 @@ public class ManageUsersActivity extends AppCompatActivity {
             TextView tvInitials = convertView.findViewById(R.id.tv_initials);
 
             tvName.setText(user.firstName + " " + user.lastName);
-            tvDetails.setText(user.role + " · " + user.email);
+            tvDetails.setText(user.role + " · " + user.phone);
             
             String initials = "";
-            if (!user.firstName.isEmpty()) initials += user.firstName.charAt(0);
-            if (!user.lastName.isEmpty()) initials += user.lastName.charAt(0);
-            tvInitials.setText(initials.toUpperCase());
+            if (user.firstName != null && !user.firstName.isEmpty()) initials += user.firstName.charAt(0);
+            if (user.lastName != null && !user.lastName.isEmpty()) initials += user.lastName.charAt(0);
+            if (tvInitials != null) tvInitials.setText(initials.toUpperCase());
 
             return convertView;
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadUsers();
     }
 }
