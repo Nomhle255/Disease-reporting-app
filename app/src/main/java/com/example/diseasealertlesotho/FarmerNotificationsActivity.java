@@ -84,7 +84,7 @@ public class FarmerNotificationsActivity extends AppCompatActivity {
                 todayList.add(new NotificationItem(
                         title,
                         message + " · " + date,
-                        android.R.drawable.ic_dialog_info,
+                        android.R.drawable.stat_sys_warning,
                         "#1E88E5"
                 ));
             } while (cursor.moveToNext());
