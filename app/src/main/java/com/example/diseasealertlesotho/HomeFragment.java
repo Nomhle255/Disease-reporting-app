@@ -4,10 +4,13 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -83,8 +86,9 @@ public class HomeFragment extends Fragment {
                 String symptoms = cursor.getString(cursor.getColumnIndexOrThrow("symptoms"));
                 String status = cursor.getString(cursor.getColumnIndexOrThrow("status"));
                 String date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
+                byte[] photo = cursor.getBlob(cursor.getColumnIndexOrThrow("photo"));
 
-                addRecentReportItem(type, symptoms, status, date);
+                addRecentReportItem(type, symptoms, status, date, photo);
             }
         } else {
             tvNoReports.setVisibility(View.VISIBLE);
@@ -92,13 +96,14 @@ public class HomeFragment extends Fragment {
         cursor.close();
     }
 
-    private void addRecentReportItem(String type, String symptoms, String status, String date) {
+    private void addRecentReportItem(String type, String symptoms, String status, String date, byte[] photo) {
         View itemView = LayoutInflater.from(getContext()).inflate(R.layout.item_report_history, layoutRecentReports, false);
         
         TextView tvTitle = itemView.findViewById(R.id.tv_report_title);
         TextView tvMeta = itemView.findViewById(R.id.tv_report_meta);
         TextView tvStatus = itemView.findViewById(R.id.tv_status_badge);
         TextView tvFooter = itemView.findViewById(R.id.tv_footer_message);
+        ImageView ivPhoto = itemView.findViewById(R.id.iv_report_photo_history);
 
         tvTitle.setText(type + " — " + (symptoms.length() > 30 ? symptoms.substring(0, 27) + "..." : symptoms));
         tvMeta.setText(date);
@@ -106,6 +111,14 @@ public class HomeFragment extends Fragment {
         
         // Hide elements not usually needed in a "mini" dashboard view
         tvFooter.setVisibility(View.GONE);
+
+        // Set photo
+        if (photo != null && photo.length > 0) {
+            Bitmap bitmap = BitmapFactory.decodeByteArray(photo, 0, photo.length);
+            ivPhoto.setImageBitmap(bitmap);
+        } else {
+            ivPhoto.setImageResource(android.R.drawable.ic_menu_gallery);
+        }
 
         // Styling status badge
         if (status.equalsIgnoreCase("Pending")) {

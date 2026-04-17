@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -100,6 +102,9 @@ public class AllReportsActivity extends AppCompatActivity {
                     report.symptoms = cursor.getString(cursor.getColumnIndexOrThrow("symptoms"));
                     report.date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
                     report.status = cursor.getString(cursor.getColumnIndexOrThrow("status"));
+                    
+                    // Load the photo blob
+                    report.photo = cursor.getBlob(cursor.getColumnIndexOrThrow("photo"));
                     
                     if (report.status == null) report.status = "Pending";
                     
@@ -233,6 +238,7 @@ public class AllReportsActivity extends AppCompatActivity {
         int id;
         String reportId, farmerName, animalType, district, symptoms, date, status, userPhone;
         int animalCount;
+        byte[] photo;
     }
 
     private class ReportAdapter extends BaseAdapter {
@@ -264,12 +270,21 @@ public class AllReportsActivity extends AppCompatActivity {
             TextView tvDetails = convertView.findViewById(R.id.tv_location_details);
             TextView tvAssigned = convertView.findViewById(R.id.tv_assigned_info);
             TextView tvStatus = convertView.findViewById(R.id.tv_status_tag);
+            ImageView ivPhoto = convertView.findViewById(R.id.iv_report_photo);
 
             tvId.setText(report.reportId);
             tvDate.setText(report.date);
             tvFarmerAnimal.setText(report.farmerName + " — " + report.animalType);
             tvDetails.setText(report.district + " · " + report.animalCount + " animals · " + report.symptoms);
             
+            // Set the photo if available
+            if (report.photo != null && report.photo.length > 0) {
+                Bitmap bitmap = BitmapFactory.decodeByteArray(report.photo, 0, report.photo.length);
+                ivPhoto.setImageBitmap(bitmap);
+            } else {
+                ivPhoto.setImageResource(android.R.drawable.ic_menu_gallery);
+            }
+
             // For now, assigned info can just show status-related info
             tvAssigned.setText("Status updated: " + report.date);
             tvStatus.setText(report.status);

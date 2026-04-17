@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -87,6 +89,7 @@ public class FarmerReportHistoryActivity extends AppCompatActivity {
                     report.symptoms = cursor.getString(cursor.getColumnIndexOrThrow("symptoms"));
                     report.date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
                     report.status = cursor.getString(cursor.getColumnIndexOrThrow("status"));
+                    report.photo = cursor.getBlob(cursor.getColumnIndexOrThrow("photo"));
 
                     if (report.status == null) report.status = "Pending";
 
@@ -169,6 +172,7 @@ public class FarmerReportHistoryActivity extends AppCompatActivity {
 
     static class HistoryReport {
         String reportId, animalType, district, symptoms, date, status, footerMessage;
+        byte[] photo;
     }
 
     private class ReportHistoryAdapter extends BaseAdapter {
@@ -198,7 +202,7 @@ public class FarmerReportHistoryActivity extends AppCompatActivity {
             TextView tvMeta = convertView.findViewById(R.id.tv_report_meta);
             TextView tvStatus = convertView.findViewById(R.id.tv_status_badge);
             TextView tvFooter = convertView.findViewById(R.id.tv_footer_message);
-            ImageView ivIcon = convertView.findViewById(R.id.iv_animal_icon);
+            ImageView ivPhoto = convertView.findViewById(R.id.iv_report_photo_history);
 
             tvTitle.setText(report.animalType + " — " + report.symptoms);
             tvMeta.setText(report.reportId + " · " + report.date + " · " + report.district);
@@ -216,7 +220,12 @@ public class FarmerReportHistoryActivity extends AppCompatActivity {
                 tvStatus.setTextColor(ContextCompat.getColor(context, R.color.tag_resolved_text));
             }
 
-            ivIcon.setImageResource(android.R.drawable.ic_menu_gallery);
+            if (report.photo != null && report.photo.length > 0) {
+                Bitmap bitmap = BitmapFactory.decodeByteArray(report.photo, 0, report.photo.length);
+                ivPhoto.setImageBitmap(bitmap);
+            } else {
+                ivPhoto.setImageResource(android.R.drawable.ic_menu_gallery);
+            }
 
             return convertView;
         }
