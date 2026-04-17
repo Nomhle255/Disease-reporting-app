@@ -75,7 +75,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:background="@drawable/edit_text_bg"
-                    android:hint="Select Animal"
+                    android:hint=""
                     android:inputType="none"
                     android:paddingHorizontal="16dp"
                     android:textColor="@android:color/black"
@@ -97,7 +97,7 @@
                 android:layout_height="48dp"
                 android:layout_marginTop="8dp"
                 android:background="@drawable/edit_text_bg"
-                android:hint="5"
+                android:hint=""
                 android:inputType="number"
                 android:paddingHorizontal="16dp"
                 android:textColor="@android:color/black"
@@ -118,7 +118,7 @@
                 android:layout_marginTop="8dp"
                 android:background="@drawable/edit_text_bg"
                 android:gravity="top"
-                android:hint="Limping, blisters on hooves, not eating, drooling heavily since yesterday morning..."
+                android:hint=""
                 android:padding="16dp"
                 android:textSize="14sp"
                 android:textColor="@android:color/black"
@@ -139,7 +139,7 @@
                 android:layout_marginTop="8dp"
                 android:background="@drawable/edit_text_bg"
                 android:focusable="false"
-                android:hint="09 April 2026"
+                android:hint=""
                 android:paddingHorizontal="16dp"
                 android:textColor="@android:color/black"
                 android:textColorHint="@android:color/black" />
@@ -155,25 +155,48 @@
             <LinearLayout
                 android:id="@+id/btn_upload_photo"
                 android:layout_width="match_parent"
-                android:layout_height="100dp"
+                android:layout_height="150dp"
                 android:layout_marginTop="8dp"
                 android:background="@drawable/dashed_border"
                 android:gravity="center"
+                android:clickable="true"
+                android:focusable="true"
                 android:orientation="vertical">
 
                 <ImageView
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:src="@android:drawable/ic_menu_camera"
-                    app:tint="#1B5E20" />
+                    android:id="@+id/iv_preview"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerInside"
+                    android:visibility="gone" />
 
-                <TextView
+                <LinearLayout
+                    android:id="@+id/layout_upload_placeholder"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Tap to upload photo"
-                    android:textColor="#1B5E20"
-                    android:textStyle="bold" />
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:clickable="false"
+                    android:focusable="false">
+
+                    <ImageView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@android:drawable/ic_menu_camera"
+                        app:tint="#1B5E20"
+                        android:clickable="false"
+                        android:focusable="false" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Tap to upload photo"
+                        android:textColor="#1B5E20"
+                        android:textStyle="bold"
+                        android:clickable="false"
+                        android:focusable="false" />
+                </LinearLayout>
             </LinearLayout>
 
             <com.google.android.material.button.MaterialButton

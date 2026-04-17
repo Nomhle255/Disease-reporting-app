@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -77,44 +79,26 @@ public class FarmerReportHistoryActivity extends AppCompatActivity {
     private void loadReports() {
         reportList.clear();
         try {
-            // Updated query to fetch the latest response and the vet's name
-            String query = "SELECT r.*, res.response as vet_advice, v.firstname as v_fname, v.lastname as v_lname " +
-                          "FROM reports r " +
-                          "LEFT JOIN (SELECT * FROM responses GROUP BY report_id HAVING MAX(response_id)) res ON r.id = res.report_id " +
-                          "LEFT JOIN users v ON res.vet_phone = v.phone " +
-                          "WHERE r.user_phone = ? " +
-                          "ORDER BY r.id DESC";
-            
-            Cursor cursor = db.rawQuery(query, new String[]{userPhone});
+            Cursor cursor = db.rawQuery("SELECT * FROM reports WHERE user_phone = ? ORDER BY id DESC", new String[]{userPhone});
             if (cursor.moveToFirst()) {
                 do {
                     HistoryReport report = new HistoryReport();
-                    report.reportId = "REP-" + String.format("%03d", cursor.getInt(cursor.getColumnIndexOrThrow("id")));
+                    report.reportId = "REP-" + cursor.getInt(cursor.getColumnIndexOrThrow("id"));
                     report.animalType = cursor.getString(cursor.getColumnIndexOrThrow("animal_type"));
                     report.district = "Maseru"; // Placeholder
                     report.symptoms = cursor.getString(cursor.getColumnIndexOrThrow("symptoms"));
                     report.date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
                     report.status = cursor.getString(cursor.getColumnIndexOrThrow("status"));
-                    
-                    String advice = cursor.getString(cursor.getColumnIndexOrThrow("vet_advice"));
-                    String vFname = cursor.getString(cursor.getColumnIndexOrThrow("v_fname"));
-                    String vLname = cursor.getString(cursor.getColumnIndexOrThrow("v_lname"));
+                    report.photo = cursor.getBlob(cursor.getColumnIndexOrThrow("photo"));
 
                     if (report.status == null) report.status = "Pending";
 
-                    if (advice != null && !advice.isEmpty()) {
-                        String vetName = (vFname != null ? "Dr. " + vFname + ": " : "Vet: ");
-                        report.footerMessage = vetName + advice;
+                    if (report.status.equalsIgnoreCase("Investigating")) {
+                        report.footerMessage = "Vet responded · Farm visit scheduled soon";
+                    } else if (report.status.equalsIgnoreCase("Resolved")) {
+                        report.footerMessage = "Case closed · Treatment advised";
                     } else {
-                        if (report.status.equalsIgnoreCase("Investigating")) {
-                            report.footerMessage = "Vet requested more info · Please check alerts";
-                        } else if (report.status.equalsIgnoreCase("Scheduled")) {
-                            report.footerMessage = "Vet responded · Farm visit scheduled";
-                        } else if (report.status.equalsIgnoreCase("Resolved")) {
-                            report.footerMessage = "Case closed · Treatment advised";
-                        } else {
-                            report.footerMessage = "Awaiting vet review";
-                        }
+                        report.footerMessage = "Awaiting vet review";
                     }
 
                     reportList.add(report);
@@ -137,7 +121,7 @@ public class FarmerReportHistoryActivity extends AppCompatActivity {
             applyFilter();
         });
         findViewById(R.id.btn_filter_active).setOnClickListener(v -> {
-            currentFilter = "Scheduled";
+            currentFilter = "Investigating";
             applyFilter();
         });
         findViewById(R.id.btn_filter_resolved).setOnClickListener(v -> {
@@ -188,6 +172,7 @@ public class FarmerReportHistoryActivity extends AppCompatActivity {
 
     static class HistoryReport {
         String reportId, animalType, district, symptoms, date, status, footerMessage;
+        byte[] photo;
     }
 
     private class ReportHistoryAdapter extends BaseAdapter {
@@ -217,23 +202,17 @@ public class FarmerReportHistoryActivity extends AppCompatActivity {
             TextView tvMeta = convertView.findViewById(R.id.tv_report_meta);
             TextView tvStatus = convertView.findViewById(R.id.tv_status_badge);
             TextView tvFooter = convertView.findViewById(R.id.tv_footer_message);
-            ImageView ivIcon = convertView.findViewById(R.id.iv_animal_icon);
+            ImageView ivPhoto = convertView.findViewById(R.id.iv_report_photo_history);
 
             tvTitle.setText(report.animalType + " — " + report.symptoms);
             tvMeta.setText(report.reportId + " · " + report.date + " · " + report.district);
-            
-            // Map status for display
-            String displayStatus = report.status;
-            if (report.status.equalsIgnoreCase("Investigating")) {
-                displayStatus = "Info Requested";
-            }
-            tvStatus.setText(displayStatus);
+            tvStatus.setText(report.status);
             tvFooter.setText(report.footerMessage);
 
             if (report.status.equalsIgnoreCase("Pending")) {
                 tvStatus.setBackgroundTintList(ContextCompat.getColorStateList(context, R.color.tag_pending_bg));
                 tvStatus.setTextColor(ContextCompat.getColor(context, R.color.tag_pending_text));
-            } else if (report.status.equalsIgnoreCase("Investigating") || report.status.equalsIgnoreCase("Scheduled")) {
+            } else if (report.status.equalsIgnoreCase("Investigating")) {
                 tvStatus.setBackgroundTintList(ContextCompat.getColorStateList(context, R.color.tag_investigating_bg));
                 tvStatus.setTextColor(ContextCompat.getColor(context, R.color.tag_investigating_text));
             } else if (report.status.equalsIgnoreCase("Resolved")) {
@@ -241,7 +220,12 @@ public class FarmerReportHistoryActivity extends AppCompatActivity {
                 tvStatus.setTextColor(ContextCompat.getColor(context, R.color.tag_resolved_text));
             }
 
-            ivIcon.setImageResource(android.R.drawable.ic_menu_gallery);
+            if (report.photo != null && report.photo.length > 0) {
+                Bitmap bitmap = BitmapFactory.decodeByteArray(report.photo, 0, report.photo.length);
+                ivPhoto.setImageBitmap(bitmap);
+            } else {
+                ivPhoto.setImageResource(android.R.drawable.ic_menu_gallery);
+            }
 
             return convertView;
         }
