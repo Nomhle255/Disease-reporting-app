@@ -2,6 +2,9 @@ package com.example.diseasealertlesotho;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,14 +13,12 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
-import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.graphics.Insets;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +29,7 @@ public class FarmerNotificationsActivity extends AppCompatActivity {
     private NotificationAdapter adapterToday, adapterYesterday;
     private List<NotificationItem> todayList = new ArrayList<>();
     private List<NotificationItem> yesterdayList = new ArrayList<>();
+    private SQLiteDatabase db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,8 +46,10 @@ public class FarmerNotificationsActivity extends AppCompatActivity {
             });
         }
 
+        db = openOrCreateDatabase("DiseaseAlertDB", Context.MODE_PRIVATE, null);
+
         initViews();
-        loadMockData();
+        loadNotificationsFromDb();
         setupNavigation();
     }
 
@@ -60,53 +64,42 @@ public class FarmerNotificationsActivity extends AppCompatActivity {
         lvYesterday.setAdapter(adapterYesterday);
     }
 
-    private void loadMockData() {
-        // Today's notifications
-        todayList.add(new NotificationItem(
-                "Disease Alert — Leribe",
-                "FMD outbreak detected. Isolate cattle and restrict movement. — Dr. Nthabiseng · 2h ago",
-                android.R.drawable.ic_dialog_alert,
-                "#E53935"
-        ));
-        todayList.add(new NotificationItem(
-                "Vet Responded — RPT-045",
-                "Isolate affected cattle immediately. Farm visit scheduled for 12 April. · 3h ago",
-                android.R.drawable.ic_menu_agenda, // Placeholder for vet icon
-                "#1E88E5"
-        ));
+    private void loadNotificationsFromDb() {
+        todayList.clear();
+        yesterdayList.clear();
 
-        // Yesterday's notifications
-        yesterdayList.add(new NotificationItem(
-                "Case Resolved — RPT-038",
-                "Your goat respiratory case has been resolved. Follow treatment plan provided. · 1d ago",
-                android.R.drawable.checkbox_on_background,
-                "#43A047"
-        ));
-        yesterdayList.add(new NotificationItem(
-                "Report Received — RPT-031",
-                "Your poultry death report has been received and is pending vet review. · 1d ago",
-                android.R.drawable.ic_menu_edit,
-                "#FB8C00"
-        ));
-        yesterdayList.add(new NotificationItem(
-                "More Info Requested",
-                "Vet requests additional photos of poultry housing for RPT-031. · 1d ago",
-                android.R.drawable.ic_menu_camera,
-                "#1E88E5"
-        ));
+        SharedPreferences sp = getSharedPreferences("UserSession", MODE_PRIVATE);
+        String phone = sp.getString("phone", "");
+
+        // Fetch notifications for this farmer
+        Cursor cursor = db.rawQuery("SELECT * FROM notifications WHERE user_phone = ? AND type = 'Farmer' ORDER BY id DESC", new String[]{phone});
+
+        if (cursor.moveToFirst()) {
+            do {
+                String title = cursor.getString(cursor.getColumnIndexOrThrow("title"));
+                String message = cursor.getString(cursor.getColumnIndexOrThrow("message"));
+                String date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
+                
+                // For now, put all in "Today" for simplicity, or you could parse the date
+                todayList.add(new NotificationItem(
+                        title,
+                        message + " · " + date,
+                        android.R.drawable.stat_sys_warning,
+                        "#1E88E5"
+                ));
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
 
         adapterToday.notifyDataSetChanged();
         adapterYesterday.notifyDataSetChanged();
-
-        // Adjust ListView height dynamically for Nested Scroll (Simplified)
+        
         setListViewHeightBasedOnChildren(lvToday);
         setListViewHeightBasedOnChildren(lvYesterday);
     }
 
     private void setupNavigation() {
-        findViewById(R.id.layout_home_tab).setOnClickListener(v -> {
-            finish();
-        });
+        findViewById(R.id.layout_home_tab).setOnClickListener(v -> finish());
         findViewById(R.id.layout_reports_tab).setOnClickListener(v -> {
             startActivity(new Intent(this, FarmerReportHistoryActivity.class));
             finish();
@@ -124,7 +117,11 @@ public class FarmerNotificationsActivity extends AppCompatActivity {
 
     private void setListViewHeightBasedOnChildren(ListView listView) {
         NotificationAdapter adapter = (NotificationAdapter) listView.getAdapter();
-        if (adapter == null) return;
+        if (adapter == null || adapter.getCount() == 0) {
+            listView.getLayoutParams().height = 0;
+            listView.requestLayout();
+            return;
+        }
         int totalHeight = 0;
         for (int i = 0; i < adapter.getCount(); i++) {
             View listItem = adapter.getView(i, null, listView);

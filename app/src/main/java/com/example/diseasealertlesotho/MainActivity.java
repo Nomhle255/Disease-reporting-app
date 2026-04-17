@@ -77,19 +77,15 @@ public class MainActivity extends AppCompatActivity {
                 "photo BLOB, " +
                 "status VARCHAR DEFAULT 'Pending');");
 
-        db.execSQL("CREATE TABLE IF NOT EXISTS responses(" +
-                "response_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                "report_id INTEGER, " +
-                "vet_phone VARCHAR, " +
-                "farmer_phone VARCHAR, " +
-                "response TEXT, " +
-                "status VARCHAR DEFAULT 'Resolved', " +
+        db.execSQL("CREATE TABLE IF NOT EXISTS notifications(" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "user_phone VARCHAR, " +
+                "title VARCHAR, " +
+                "message TEXT, " +
                 "date VARCHAR, " +
-                "FOREIGN KEY(report_id) REFERENCES reports(id), " +
-                "FOREIGN KEY(vet_phone) REFERENCES users(phone), " +
-                "FOREIGN KEY(farmer_phone) REFERENCES users(phone));");
+                "type VARCHAR);"); // 'Farmer' or 'Vet'
         
-        // Ensure columns exist if table was created previously
+        // Ensure status column exists if table was created previously
         try {
             db.execSQL("ALTER TABLE reports ADD COLUMN status VARCHAR DEFAULT 'Pending'");
         } catch (Exception ignored) {}

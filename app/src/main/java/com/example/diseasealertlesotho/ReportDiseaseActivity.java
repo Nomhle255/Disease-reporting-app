@@ -133,6 +133,17 @@ public class ReportDiseaseActivity extends AppCompatActivity {
 
         if (id != -1) {
             saveToHistoryFile(type, countStr, symptoms, date);
+            
+            // Notify Veterinary Officer
+            NotificationHelper.showNotification(
+                this, 
+                "New Report Submitted", 
+                "A new " + type + " disease report has been received.", 
+                AllReportsActivity.class,
+                "Vet", // Target user identifier
+                "Vet"  // Notification type
+            );
+
             Toast.makeText(this, "Report submitted successfully", Toast.LENGTH_SHORT).show();
             finish();
         } else {
