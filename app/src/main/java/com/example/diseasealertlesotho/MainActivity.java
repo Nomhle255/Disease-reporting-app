@@ -76,6 +76,14 @@ public class MainActivity extends AppCompatActivity {
                 "date VARCHAR, " +
                 "photo BLOB, " +
                 "status VARCHAR DEFAULT 'Pending');");
+
+        db.execSQL("CREATE TABLE IF NOT EXISTS notifications(" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "user_phone VARCHAR, " +
+                "title VARCHAR, " +
+                "message TEXT, " +
+                "date VARCHAR, " +
+                "type VARCHAR);"); // 'Farmer' or 'Vet'
         
         // Ensure status column exists if table was created previously
         try {

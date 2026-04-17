@@ -1,5 +1,6 @@
 package com.example.diseasealertlesotho;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -12,8 +13,10 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
@@ -55,6 +58,10 @@ public class AllReportsActivity extends AppCompatActivity {
         updateSummaryStats();
 
         findViewById(R.id.tv_back_dashboard).setOnClickListener(v -> finish());
+
+        listView.setOnItemClickListener((parent, view, position, id) -> {
+            showStatusUpdateDialog(filteredList.get(position));
+        });
     }
 
     private void initViews() {
@@ -81,6 +88,7 @@ public class AllReportsActivity extends AppCompatActivity {
                     Report report = new Report();
                     report.id = cursor.getInt(cursor.getColumnIndexOrThrow("id"));
                     report.reportId = "RPT-" + String.format("%03d", report.id);
+                    report.userPhone = cursor.getString(cursor.getColumnIndexOrThrow("user_phone"));
                     
                     String fName = cursor.getString(cursor.getColumnIndexOrThrow("firstname"));
                     String lName = cursor.getString(cursor.getColumnIndexOrThrow("lastname"));
@@ -105,6 +113,43 @@ public class AllReportsActivity extends AppCompatActivity {
         applyFilters();
     }
 
+    private void showStatusUpdateDialog(Report report) {
+        String[] statuses = {"Pending", "Investigating", "Resolved"};
+        
+        new AlertDialog.Builder(this)
+                .setTitle("Update Report Status")
+                .setItems(statuses, (dialog, which) -> {
+                    String newStatus = statuses[which];
+                    updateReportStatus(report, newStatus);
+                })
+                .show();
+    }
+
+    private void updateReportStatus(Report report, String newStatus) {
+        ContentValues cv = new ContentValues();
+        cv.put("status", newStatus);
+        
+        int rows = db.update("reports", cv, "id=?", new String[]{String.valueOf(report.id)});
+        
+        if (rows > 0) {
+            report.status = newStatus;
+            
+            // Notify Farmer
+            NotificationHelper.showNotification(
+                this,
+                "Report Status Updated",
+                "The status of your report (" + report.reportId + ") has been updated to: " + newStatus,
+                FarmerReportHistoryActivity.class,
+                report.userPhone,
+                "Farmer"
+            );
+            
+            Toast.makeText(this, "Status updated to " + newStatus, Toast.LENGTH_SHORT).show();
+            loadReports();
+            updateSummaryStats();
+        }
+    }
+
     private void updateSummaryStats() {
         int pending = 0, investigating = 0, resolved = 0;
         for (Report r : reportList) {
@@ -116,10 +161,12 @@ public class AllReportsActivity extends AppCompatActivity {
         View layoutSummary = findViewById(R.id.layout_summary);
         if (layoutSummary instanceof ViewGroup) {
             ViewGroup group = (ViewGroup) layoutSummary;
-            setupSummaryCard(group.getChildAt(0), String.valueOf(reportList.size()), "Total", R.color.header_green);
-            setupSummaryCard(group.getChildAt(1), String.valueOf(pending), "Pending", R.color.status_new);
-            setupSummaryCard(group.getChildAt(2), String.valueOf(investigating), "Active", R.color.status_active);
-            setupSummaryCard(group.getChildAt(3), String.valueOf(resolved), "Resolved", R.color.status_resolved);
+            if (group.getChildCount() >= 4) {
+                setupSummaryCard(group.getChildAt(0), String.valueOf(reportList.size()), "Total", R.color.header_green);
+                setupSummaryCard(group.getChildAt(1), String.valueOf(pending), "Pending", R.color.status_new);
+                setupSummaryCard(group.getChildAt(2), String.valueOf(investigating), "Active", R.color.status_active);
+                setupSummaryCard(group.getChildAt(3), String.valueOf(resolved), "Resolved", R.color.status_resolved);
+            }
         }
     }
 
@@ -184,7 +231,7 @@ public class AllReportsActivity extends AppCompatActivity {
 
     static class Report {
         int id;
-        String reportId, farmerName, animalType, district, symptoms, date, status;
+        String reportId, farmerName, animalType, district, symptoms, date, status, userPhone;
         int animalCount;
     }
 
