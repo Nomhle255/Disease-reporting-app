@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ── Existing app colors (keep whatever you already have) ── -->
+    <color name="header_green">#2E7D32</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="border_color">#DDDDDD</color>
+
+    <!-- ── Status badge text colors ── -->
+    <color name="badge_pending_text">#F57F17</color>
+    <color name="badge_investigating_text">#1565C0</color>
+    <color name="badge_advice_text">#4527A0</color>
+    <color name="badge_visit_text">#E65100</color>
+    <color name="badge_resolved_text">#2E7D32</color>
+
+</resources>

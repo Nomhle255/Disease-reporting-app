@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,7 +21,7 @@ import androidx.fragment.app.FragmentTransaction;
 
 public class VetDashboardActivity extends AppCompatActivity {
 
-    private TextView tvVetName, tvNewCount, tvResolvedCount, tvTotalCount;
+    private TextView tvVetName, tvNewCount, tvActiveCount, tvTotalCount;
     private LinearLayout layoutHomeTab, layoutCasesTab, layoutAlertsTab, layoutProfileTab, layoutRecentReports;
     private View scrollView, fragmentContainer;
     private ImageView ivHome, ivCases, ivAlerts, ivProfile;
@@ -36,8 +38,6 @@ public class VetDashboardActivity extends AppCompatActivity {
 
         setupData();
         setupNavigation();
-        loadRecentReports();
-        updateStats();
 
         // Handle profile navigation if requested
         String openFragment = getIntent().getStringExtra("OPEN_FRAGMENT");
@@ -47,14 +47,20 @@ public class VetDashboardActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        updateStats();
+        loadRecentReports();
+    }
+
     private void initViews() {
         scrollView = findViewById(R.id.vet_scroll_view);
         fragmentContainer = findViewById(R.id.vet_fragment_container);
         tvVetName = findViewById(R.id.tv_vet_name);
         
-        // Use the direct IDs assigned in activity_vet_dashboard.xml
         tvNewCount = findViewById(R.id.tv_stat_new);
-        tvResolvedCount = findViewById(R.id.tv_stat_active);
+        tvActiveCount = findViewById(R.id.tv_stat_active);
         tvTotalCount = findViewById(R.id.tv_stat_total);
 
         layoutRecentReports = findViewById(R.id.layout_recent_reports);
@@ -77,7 +83,7 @@ public class VetDashboardActivity extends AppCompatActivity {
 
     private void setupData() {
         SharedPreferences prefs = getSharedPreferences("UserSession", MODE_PRIVATE);
-        String name = prefs.getString("firstname", "Dr. Nthabiseng") + " " + prefs.getString("lastname", "Mokoena");
+        String name = prefs.getString("firstname", "Vet") + " " + prefs.getString("lastname", "Officer");
         tvVetName.setText(name);
     }
 
@@ -87,8 +93,8 @@ public class VetDashboardActivity extends AppCompatActivity {
             if (cNew.moveToFirst()) tvNewCount.setText(String.valueOf(cNew.getInt(0)));
             cNew.close();
 
-            Cursor cActive = db.rawQuery("SELECT COUNT(*) FROM reports WHERE status = 'Resolved'", null);
-            if (cActive.moveToFirst()) tvResolvedCount.setText(String.valueOf(cActive.getInt(0)));
+            Cursor cActive = db.rawQuery("SELECT COUNT(*) FROM reports WHERE status = 'Investigating' OR status = 'Scheduled' OR status = 'Advice Provided'", null);
+            if (cActive.moveToFirst()) tvActiveCount.setText(String.valueOf(cActive.getInt(0)));
             cActive.close();
 
             Cursor cTotal = db.rawQuery("SELECT COUNT(*) FROM reports", null);
@@ -102,7 +108,6 @@ public class VetDashboardActivity extends AppCompatActivity {
         try {
             String query = "SELECT r.*, u.firstname, u.lastname FROM reports r " +
                           "LEFT JOIN users u ON r.user_phone = u.phone " +
-                          "WHERE r.status = 'Pending' OR r.status IS NULL " +
                           "ORDER BY r.id DESC LIMIT 5";
             Cursor cursor = db.rawQuery(query, null);
 
@@ -112,6 +117,7 @@ public class VetDashboardActivity extends AppCompatActivity {
                     
                     TextView tvTitle = itemView.findViewById(R.id.tv_item_title);
                     TextView tvSubtitle = itemView.findViewById(R.id.tv_item_subtitle);
+                    ImageView ivPhoto = itemView.findViewById(R.id.iv_item_photo);
                     
                     String fName = cursor.getString(cursor.getColumnIndexOrThrow("firstname"));
                     String lName = cursor.getString(cursor.getColumnIndexOrThrow("lastname"));
@@ -119,9 +125,17 @@ public class VetDashboardActivity extends AppCompatActivity {
                     String symptoms = cursor.getString(cursor.getColumnIndexOrThrow("symptoms"));
                     String date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
                     int id = cursor.getInt(cursor.getColumnIndexOrThrow("id"));
+                    byte[] photo = cursor.getBlob(cursor.getColumnIndexOrThrow("photo"));
 
                     tvTitle.setText((fName != null ? fName + " " + lName : "Unknown") + " — " + animal);
                     tvSubtitle.setText(symptoms + " · " + date);
+
+                    if (photo != null && photo.length > 0) {
+                        Bitmap bitmap = BitmapFactory.decodeByteArray(photo, 0, photo.length);
+                        ivPhoto.setImageBitmap(bitmap);
+                    } else {
+                        ivPhoto.setImageResource(android.R.drawable.ic_menu_gallery);
+                    }
 
                     itemView.setOnClickListener(v -> {
                         Intent intent = new Intent(this, VetCaseDetailsActivity.class);
@@ -131,10 +145,9 @@ public class VetDashboardActivity extends AppCompatActivity {
 
                     layoutRecentReports.addView(itemView);
                     
-                    // Add divider if not last
                     if (!cursor.isLast()) {
                         View divider = new View(this);
-                        divider.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1));
+                        divider.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 2));
                         divider.setBackgroundColor(getResources().getColor(android.R.color.darker_gray));
                         layoutRecentReports.addView(divider);
                     }
@@ -142,8 +155,8 @@ public class VetDashboardActivity extends AppCompatActivity {
                 } while (cursor.moveToNext());
             } else {
                 TextView tvNoReports = new TextView(this);
-                tvNoReports.setText("No new reports found");
-                tvNoReports.setPadding(20, 20, 20, 20);
+                tvNoReports.setText("No reports found");
+                tvNoReports.setPadding(40, 40, 40, 40);
                 layoutRecentReports.addView(tvNoReports);
             }
             cursor.close();

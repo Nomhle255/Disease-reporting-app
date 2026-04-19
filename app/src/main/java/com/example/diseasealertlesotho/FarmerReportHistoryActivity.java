@@ -1,239 +1,280 @@
 package com.example.diseasealertlesotho;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.os.Bundle;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.BaseAdapter;
-import android.widget.ImageView;
-import android.widget.ListView;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.google.android.material.button.MaterialButton;
 
 public class FarmerReportHistoryActivity extends AppCompatActivity {
 
-    private ListView listView;
-    private View emptyState;
-    private ReportHistoryAdapter adapter;
-    private List<HistoryReport> reportList = new ArrayList<>();
-    private List<HistoryReport> filteredList = new ArrayList<>();
+    // ── Header
+    private TextView tvSubtitle, tvStatusBadge;
+
+    // ── Report fields
+    private TextView tvAnimalType, tvAffectedCount, tvDateObserved, tvSymptoms;
+
+    // ── Conversation thread
+    private LinearLayout layoutEmptyThread;
+    private RecyclerView rvConversation;
+
+    // ── Input area (only shown when vet requests more info)
+    private LinearLayout layoutInputArea;
+    private EditText etFarmerReply;
+    private MaterialButton btnSendReply;
+
+    // ── DB & session
     private SQLiteDatabase db;
-    private String currentFilter = "All";
-    private String userPhone;
+    private int reportId = -1;
+    private String currentStatus = "";
+
+    // Status constants — must match what VetCaseDetailsActivity saves
+    private static final String STATUS_PENDING       = "Pending Review";
+    private static final String STATUS_INVESTIGATING = "Under Investigation";
+    private static final String STATUS_ADVICE        = "Advice Provided";
+    private static final String STATUS_VISIT         = "Visit Scheduled";
+    private static final String STATUS_RESOLVED      = "Case Resolved";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_farmer_report_history);
 
-        View mainView = findViewById(android.R.id.content);
-        if (mainView != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(mainView, (v, insets) -> {
-                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-                return insets;
-            });
-        }
-
-        SharedPreferences sp = getSharedPreferences("UserSession", MODE_PRIVATE);
-        userPhone = sp.getString("phone", "");
+        db = openOrCreateDatabase("DiseaseAlertDB", Context.MODE_PRIVATE, null);
 
         initViews();
-        setupDatabase();
-        loadReports();
-        setupFilters();
-        setupNavigation();
-
-        findViewById(R.id.tv_back_dashboard).setOnClickListener(v -> finish());
+        loadReport();
     }
 
+    // ─────────────────────────────────────────────
+    //  View binding
+    // ─────────────────────────────────────────────
     private void initViews() {
-        listView = findViewById(R.id.list_report_history);
-        emptyState = findViewById(R.id.layout_empty_state);
-        adapter = new ReportHistoryAdapter(this, filteredList);
-        listView.setAdapter(adapter);
+        tvSubtitle      = findViewById(R.id.tv_subtitle);
+        tvStatusBadge   = findViewById(R.id.tv_status_badge);
+
+        tvAnimalType    = findViewById(R.id.tv_animal_type);
+        tvAffectedCount = findViewById(R.id.tv_affected_count);
+        tvDateObserved  = findViewById(R.id.tv_date_observed);
+        tvSymptoms      = findViewById(R.id.tv_symptoms);
+
+        layoutEmptyThread = findViewById(R.id.layout_empty_thread);
+        rvConversation    = findViewById(R.id.rv_conversation);
+        rvConversation.setLayoutManager(new LinearLayoutManager(this));
+
+        layoutInputArea = findViewById(R.id.layout_input_area);
+        etFarmerReply   = findViewById(R.id.et_farmer_reply);
+        btnSendReply    = findViewById(R.id.btn_send_reply);
+
+        findViewById(R.id.tv_back).setOnClickListener(v -> finish());
+
+        btnSendReply.setOnClickListener(v -> sendMoreInfo());
     }
 
-    private void setupDatabase() {
-        db = openOrCreateDatabase("DiseaseAlertDB", Context.MODE_PRIVATE, null);
-    }
+    // ─────────────────────────────────────────────
+    //  Load report from DB
+    // ─────────────────────────────────────────────
+    private void loadReport() {
+        reportId = getIntent().getIntExtra("REPORT_ID", -1);
 
-    private void loadReports() {
-        reportList.clear();
+        if (reportId == -1) {
+            Toast.makeText(this, "Report not found.", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+
         try {
-            Cursor cursor = db.rawQuery("SELECT * FROM reports WHERE user_phone = ? ORDER BY id DESC", new String[]{userPhone});
+            Cursor cursor = db.rawQuery(
+                    "SELECT * FROM reports WHERE id = ?",
+                    new String[]{String.valueOf(reportId)});
+
             if (cursor.moveToFirst()) {
-                do {
-                    HistoryReport report = new HistoryReport();
-                    report.reportId = "REP-" + cursor.getInt(cursor.getColumnIndexOrThrow("id"));
-                    report.animalType = cursor.getString(cursor.getColumnIndexOrThrow("animal_type"));
-                    report.district = "Maseru"; // Placeholder
-                    report.symptoms = cursor.getString(cursor.getColumnIndexOrThrow("symptoms"));
-                    report.date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
-                    report.status = cursor.getString(cursor.getColumnIndexOrThrow("status"));
-                    report.photo = cursor.getBlob(cursor.getColumnIndexOrThrow("photo"));
+                String animal   = cursor.getString(cursor.getColumnIndexOrThrow("animal_type"));
+                int    count    = cursor.getInt(cursor.getColumnIndexOrThrow("count"));
+                String symptoms = cursor.getString(cursor.getColumnIndexOrThrow("symptoms"));
+                String date     = cursor.getString(cursor.getColumnIndexOrThrow("date"));
+                currentStatus   = cursor.getString(cursor.getColumnIndexOrThrow("status"));
 
-                    if (report.status == null) report.status = "Pending";
+                tvSubtitle.setText("Report #" + reportId);
+                tvAnimalType.setText(animal != null ? animal : "—");
+                tvAffectedCount.setText(count + " animals");
+                tvDateObserved.setText(date != null ? date : "—");
+                tvSymptoms.setText((symptoms != null && !symptoms.isEmpty())
+                        ? symptoms : "No description provided.");
 
-                    if (report.status.equalsIgnoreCase("Investigating")) {
-                        report.footerMessage = "Vet responded · Farm visit scheduled soon";
-                    } else if (report.status.equalsIgnoreCase("Resolved")) {
-                        report.footerMessage = "Case closed · Treatment advised";
-                    } else {
-                        report.footerMessage = "Awaiting vet review";
-                    }
-
-                    reportList.add(report);
-                } while (cursor.moveToNext());
+                updateStatusBadge(currentStatus != null ? currentStatus : STATUS_PENDING);
             }
             cursor.close();
+
+            // Load conversation after report details are set
+            loadConversationThread();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Error loading report.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // ─────────────────────────────────────────────
+    //  Load conversation thread
+    // ─────────────────────────────────────────────
+    private void loadConversationThread() {
+        try {
+            Cursor countCursor = db.rawQuery(
+                    "SELECT COUNT(*) FROM responses WHERE report_id = ?",
+                    new String[]{String.valueOf(reportId)});
+
+            int responseCount = 0;
+            if (countCursor.moveToFirst()) {
+                responseCount = countCursor.getInt(0);
+            }
+            countCursor.close();
+
+            if (responseCount == 0) {
+                // No vet response yet — show waiting state
+                layoutEmptyThread.setVisibility(View.VISIBLE);
+                rvConversation.setVisibility(View.GONE);
+                layoutInputArea.setVisibility(View.GONE);
+            } else {
+                // Vet has responded — show thread
+                layoutEmptyThread.setVisibility(View.GONE);
+                rvConversation.setVisibility(View.VISIBLE);
+                populateConversation();
+
+                // Only show the reply input if vet's last action was requesting more info
+                // i.e. status is still Under Investigation
+                if (STATUS_INVESTIGATING.equals(currentStatus)) {
+                    layoutInputArea.setVisibility(View.VISIBLE);
+                } else {
+                    layoutInputArea.setVisibility(View.GONE);
+                }
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
-        applyFilter();
     }
 
-    private void setupFilters() {
-        findViewById(R.id.btn_filter_all).setOnClickListener(v -> {
-            currentFilter = "All";
-            applyFilter();
-        });
-        findViewById(R.id.btn_filter_pending).setOnClickListener(v -> {
-            currentFilter = "Pending";
-            applyFilter();
-        });
-        findViewById(R.id.btn_filter_active).setOnClickListener(v -> {
-            currentFilter = "Investigating";
-            applyFilter();
-        });
-        findViewById(R.id.btn_filter_resolved).setOnClickListener(v -> {
-            currentFilter = "Resolved";
-            applyFilter();
-        });
+    private void populateConversation() {
+        // Same UNION query as vet side — combines vet responses and farmer
+        // more_info replies in chronological order
+        String query =
+                "SELECT 'vet' AS sender, response_type, message, date_responded AS msg_date " +
+                        "FROM responses WHERE report_id = ? " +
+                        "UNION ALL " +
+                        "SELECT 'farmer' AS sender, 'Farmer reply' AS response_type, farmer_message AS message, date_submitted AS msg_date " +
+                        "FROM more_info WHERE report_id = ? " +
+                        "ORDER BY msg_date ASC";
+
+        Cursor cursor = db.rawQuery(query, new String[]{
+                String.valueOf(reportId), String.valueOf(reportId)});
+
+        ConversationAdapter adapter = new ConversationAdapter(this, cursor);
+        rvConversation.setAdapter(adapter);
+
+        // Scroll to bottom so farmer sees the latest message
+        rvConversation.scrollToPosition(adapter.getItemCount() - 1);
     }
 
-    private void applyFilter() {
-        filteredList.clear();
-        for (HistoryReport report : reportList) {
-            if (currentFilter.equals("All") || report.status.equalsIgnoreCase(currentFilter)) {
-                filteredList.add(report);
-            }
-        }
-        
-        if (filteredList.isEmpty()) {
-            emptyState.setVisibility(View.VISIBLE);
-            listView.setVisibility(View.GONE);
-        } else {
-            emptyState.setVisibility(View.GONE);
-            listView.setVisibility(View.VISIBLE);
+    // ─────────────────────────────────────────────
+    //  Farmer sends more info back to vet
+    // ─────────────────────────────────────────────
+    private void sendMoreInfo() {
+        String reply = etFarmerReply.getText().toString().trim();
+
+        if (reply.isEmpty()) {
+            etFarmerReply.setError("Please type your reply before sending.");
+            return;
         }
 
-        adapter.notifyDataSetChanged();
-    }
+        try {
+            SharedPreferences prefs = getSharedPreferences("UserSession", MODE_PRIVATE);
+            String farmerPhone = prefs.getString("phone", "");
 
-    private void setupNavigation() {
-        findViewById(R.id.layout_home_tab).setOnClickListener(v -> {
-            finish();
-        });
-        findViewById(R.id.layout_report_btn).setOnClickListener(v -> {
-            Intent intent = new Intent(FarmerReportHistoryActivity.this, ReportDiseaseActivity.class);
-            startActivity(intent);
-        });
-        findViewById(R.id.layout_alerts_tab).setOnClickListener(v -> {
-            Intent intent = new Intent(FarmerReportHistoryActivity.this, FarmerNotificationsActivity.class);
-            startActivity(intent);
-            finish();
-        });
-        findViewById(R.id.layout_profile_tab).setOnClickListener(v -> {
-            Intent intent = new Intent(FarmerReportHistoryActivity.this, FarmerDashboardActivity.class);
-            intent.putExtra("OPEN_FRAGMENT", "PROFILE");
-            startActivity(intent);
-            finish();
-        });
-    }
+            // Get the response_id of the latest "Request more information" from the vet
+            // so we can link this reply to the correct vet question
+            Cursor responseCursor = db.rawQuery(
+                    "SELECT id FROM responses WHERE report_id = ? AND response_type = ? ORDER BY date_responded DESC LIMIT 1",
+                    new String[]{String.valueOf(reportId), "Request more information"});
 
-    static class HistoryReport {
-        String reportId, animalType, district, symptoms, date, status, footerMessage;
-        byte[] photo;
-    }
-
-    private class ReportHistoryAdapter extends BaseAdapter {
-        private Context context;
-        private List<HistoryReport> items;
-
-        public ReportHistoryAdapter(Context context, List<HistoryReport> items) {
-            this.context = context;
-            this.items = items;
-        }
-
-        @Override
-        public int getCount() { return items.size(); }
-        @Override
-        public Object getItem(int position) { return items.get(position); }
-        @Override
-        public long getItemId(int position) { return position; }
-
-        @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            if (convertView == null) {
-                convertView = LayoutInflater.from(context).inflate(R.layout.item_report_history, parent, false);
+            int latestResponseId = -1;
+            if (responseCursor.moveToFirst()) {
+                latestResponseId = responseCursor.getInt(0);
             }
+            responseCursor.close();
 
-            HistoryReport report = items.get(position);
-            TextView tvTitle = convertView.findViewById(R.id.tv_report_title);
-            TextView tvMeta = convertView.findViewById(R.id.tv_report_meta);
-            TextView tvStatus = convertView.findViewById(R.id.tv_status_badge);
-            TextView tvFooter = convertView.findViewById(R.id.tv_footer_message);
-            ImageView ivPhoto = convertView.findViewById(R.id.iv_report_photo_history);
+            // Save farmer's reply into more_info table
+            db.execSQL(
+                    "INSERT INTO more_info (report_id, response_id, farmer_phone, farmer_message, date_submitted) " +
+                            "VALUES (?, ?, ?, ?, datetime('now'))",
+                    new Object[]{reportId, latestResponseId, farmerPhone, reply});
 
-            tvTitle.setText(report.animalType + " — " + report.symptoms);
-            tvMeta.setText(report.reportId + " · " + report.date + " · " + report.district);
-            tvStatus.setText(report.status);
-            tvFooter.setText(report.footerMessage);
+            // Clear input
+            etFarmerReply.setText("");
 
-            if (report.status.equalsIgnoreCase("Pending")) {
-                tvStatus.setBackgroundTintList(ContextCompat.getColorStateList(context, R.color.tag_pending_bg));
-                tvStatus.setTextColor(ContextCompat.getColor(context, R.color.tag_pending_text));
-            } else if (report.status.equalsIgnoreCase("Investigating")) {
-                tvStatus.setBackgroundTintList(ContextCompat.getColorStateList(context, R.color.tag_investigating_bg));
-                tvStatus.setTextColor(ContextCompat.getColor(context, R.color.tag_investigating_text));
-            } else if (report.status.equalsIgnoreCase("Resolved")) {
-                tvStatus.setBackgroundTintList(ContextCompat.getColorStateList(context, R.color.tag_resolved_bg));
-                tvStatus.setTextColor(ContextCompat.getColor(context, R.color.tag_resolved_text));
-            }
+            // Refresh thread to show the new reply
+            loadConversationThread();
 
-            if (report.photo != null && report.photo.length > 0) {
-                Bitmap bitmap = BitmapFactory.decodeByteArray(report.photo, 0, report.photo.length);
-                ivPhoto.setImageBitmap(bitmap);
-            } else {
-                ivPhoto.setImageResource(android.R.drawable.ic_menu_gallery);
-            }
+            Toast.makeText(this,
+                    "Reply sent. The vet has been notified.",
+                    Toast.LENGTH_SHORT).show();
 
-            return convertView;
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Error sending reply.", Toast.LENGTH_SHORT).show();
         }
     }
 
+    // ─────────────────────────────────────────────
+    //  Status badge
+    // ─────────────────────────────────────────────
+    private void updateStatusBadge(String status) {
+        tvStatusBadge.setText(status);
+
+        switch (status) {
+            case STATUS_PENDING:
+                tvStatusBadge.setBackgroundResource(R.drawable.bg_badge_pending);
+                tvStatusBadge.setTextColor(Color.parseColor("#F57F17"));
+                break;
+            case STATUS_INVESTIGATING:
+                tvStatusBadge.setBackgroundResource(R.drawable.bg_badge_investigating);
+                tvStatusBadge.setTextColor(Color.parseColor("#1565C0"));
+                break;
+            case STATUS_ADVICE:
+                tvStatusBadge.setBackgroundResource(R.drawable.bg_badge_advice);
+                tvStatusBadge.setTextColor(Color.parseColor("#4527A0"));
+                break;
+            case STATUS_VISIT:
+                tvStatusBadge.setBackgroundResource(R.drawable.bg_badge_visit);
+                tvStatusBadge.setTextColor(Color.parseColor("#E65100"));
+                break;
+            case STATUS_RESOLVED:
+                tvStatusBadge.setBackgroundResource(R.drawable.bg_badge_resolved);
+                tvStatusBadge.setTextColor(Color.parseColor("#2E7D32"));
+                break;
+        }
+    }
+
+    // ─────────────────────────────────────────────
+    //  Cleanup
+    // ─────────────────────────────────────────────
     @Override
-    protected void onResume() {
-        super.onResume();
-        loadReports();
+    protected void onDestroy() {
+        super.onDestroy();
+        if (db != null && db.isOpen()) {
+            db.close();
+        }
     }
 }

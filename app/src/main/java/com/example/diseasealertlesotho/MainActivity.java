@@ -35,11 +35,14 @@ public class MainActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
+        View mainView = findViewById(R.id.main);
+        if (mainView != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(mainView, (v, insets) -> {
+                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+                return insets;
+            });
+        }
 
         initViews();
         setupDropdowns();
@@ -59,6 +62,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void initDatabase() {
         db = openOrCreateDatabase("DiseaseAlertDB", Context.MODE_PRIVATE, null);
+        
+        // Users table
         db.execSQL("CREATE TABLE IF NOT EXISTS users(" +
                 "phone VARCHAR PRIMARY KEY, " +
                 "firstname VARCHAR, " +
@@ -67,6 +72,7 @@ public class MainActivity extends AppCompatActivity {
                 "role VARCHAR, " +
                 "password VARCHAR);");
 
+        // Reports table
         db.execSQL("CREATE TABLE IF NOT EXISTS reports(" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "user_phone VARCHAR, " +
@@ -75,19 +81,45 @@ public class MainActivity extends AppCompatActivity {
                 "symptoms TEXT, " +
                 "date VARCHAR, " +
                 "photo BLOB, " +
+                "gps_location VARCHAR, " +
                 "status VARCHAR DEFAULT 'Pending');");
 
+        // Notifications table
         db.execSQL("CREATE TABLE IF NOT EXISTS notifications(" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "user_phone VARCHAR, " +
                 "title VARCHAR, " +
                 "message TEXT, " +
                 "date VARCHAR, " +
-                "type VARCHAR);"); // 'Farmer' or 'Vet'
+                "type VARCHAR);");
+
+        // Responses table (Vet responses)
+        db.execSQL("CREATE TABLE IF NOT EXISTS responses(" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "report_id INTEGER, " +
+                "vet_phone VARCHAR, " +
+                "farmer_phone VARCHAR, " +
+                "response_type VARCHAR, " +
+                "message TEXT, " +
+                "status_changed_to VARCHAR, " +
+                "date_responded VARCHAR);");
+
+        // More Info table (Farmer replies)
+        db.execSQL("CREATE TABLE IF NOT EXISTS more_info(" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "report_id INTEGER, " +
+                "response_id INTEGER, " +
+                "farmer_phone VARCHAR, " +
+                "farmer_message TEXT, " +
+                "date_submitted VARCHAR);");
         
-        // Ensure status column exists if table was created previously
+        // Handle migration for existing databases
         try {
             db.execSQL("ALTER TABLE reports ADD COLUMN status VARCHAR DEFAULT 'Pending'");
+        } catch (Exception ignored) {}
+        
+        try {
+            db.execSQL("ALTER TABLE reports ADD COLUMN gps_location VARCHAR");
         } catch (Exception ignored) {}
     }
 
@@ -119,7 +151,6 @@ public class MainActivity extends AppCompatActivity {
         String role = actRole.getText().toString().trim();
         String pwd = etPassword.getText().toString().trim();
 
-        // Check for duplicate phone
         Cursor cursor = db.rawQuery("SELECT * FROM users WHERE phone = ?", new String[]{phone});
         if (cursor.getCount() > 0) {
             showMessage("Error", "User with this phone number already exists");

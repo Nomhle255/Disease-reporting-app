@@ -5,12 +5,15 @@ import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
@@ -41,14 +44,17 @@ public class VetCasesActivity extends AppCompatActivity {
 
         initViews();
         setupDatabase();
-        loadCases();
         setupSearch();
         setupFilters();
         setupNavigation();
-        updateSummaryStats();
-        updateFilterUI();
 
         findViewById(R.id.tv_back_dashboard).setOnClickListener(v -> finish());
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        loadCases();
     }
 
     private void initViews() {
@@ -95,6 +101,7 @@ public class VetCasesActivity extends AppCompatActivity {
                     report.symptoms = cursor.getString(cursor.getColumnIndexOrThrow("symptoms"));
                     report.date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
                     report.status = cursor.getString(cursor.getColumnIndexOrThrow("status"));
+                    report.photo = cursor.getBlob(cursor.getColumnIndexOrThrow("photo"));
                     
                     if (report.status == null) report.status = "Pending";
                     
@@ -106,6 +113,8 @@ public class VetCasesActivity extends AppCompatActivity {
             e.printStackTrace();
         }
         applyFilters("");
+        updateSummaryStats();
+        updateFilterUI();
     }
 
     private void updateSummaryStats() {
@@ -164,7 +173,7 @@ public class VetCasesActivity extends AppCompatActivity {
         for (CaseReport report : caseList) {
             boolean matchesFilter;
             if (currentFilter.equals("Active")) {
-                // Now only matches "Scheduled" specifically
+                // Fixed: Only matches "Scheduled" now
                 matchesFilter = report.status.equalsIgnoreCase("Scheduled");
             } else {
                 matchesFilter = currentFilter.equals("All") || report.status.equalsIgnoreCase(currentFilter);
@@ -183,16 +192,6 @@ public class VetCasesActivity extends AppCompatActivity {
         if (filteredList.isEmpty()) {
             listView.setVisibility(View.GONE);
             tvEmptyState.setVisibility(View.VISIBLE);
-            
-            if (currentFilter.equals("Pending")) {
-                tvEmptyState.setText("No reports pending");
-            } else if (currentFilter.equals("Active")) {
-                tvEmptyState.setText("No reports scheduled");
-            } else if (currentFilter.equals("Resolved")) {
-                tvEmptyState.setText("No reports resolved");
-            } else {
-                tvEmptyState.setText("No reports found");
-            }
         } else {
             listView.setVisibility(View.VISIBLE);
             tvEmptyState.setVisibility(View.GONE);
@@ -224,6 +223,7 @@ public class VetCasesActivity extends AppCompatActivity {
         int id;
         String farmerName, animalType, district, symptoms, date, status;
         int animalCount;
+        byte[] photo;
     }
 
     private class CaseAdapter extends BaseAdapter {
@@ -254,18 +254,23 @@ public class VetCasesActivity extends AppCompatActivity {
             TextView tvFarmerAnimal = convertView.findViewById(R.id.tv_farmer_animal);
             TextView tvDetails = convertView.findViewById(R.id.tv_location_details);
             TextView tvStatus = convertView.findViewById(R.id.tv_status_tag);
+            ImageView ivPhoto = convertView.findViewById(R.id.iv_report_photo);
 
             tvId.setText("RPT-" + String.format("%03d", report.id));
             tvDate.setText(report.date);
             tvFarmerAnimal.setText(report.farmerName + " — " + report.animalType);
             tvDetails.setText((report.district != null ? report.district : "") + " · " + report.animalCount + " animals · " + report.symptoms);
             
-            // Map status for display
+            if (report.photo != null && report.photo.length > 0) {
+                Bitmap bitmap = BitmapFactory.decodeByteArray(report.photo, 0, report.photo.length);
+                ivPhoto.setImageBitmap(bitmap);
+            } else {
+                ivPhoto.setImageResource(android.R.drawable.ic_menu_gallery);
+            }
+
             String displayStatus = report.status;
             if (report.status.equalsIgnoreCase("Investigating")) {
                 displayStatus = "Info Requested";
-            } else if (report.status.equalsIgnoreCase("Scheduled")) {
-                displayStatus = "Scheduled";
             }
             tvStatus.setText(displayStatus);
 
