@@ -19,9 +19,11 @@ import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
+import java.util.Calendar;
+
 public class HomeFragment extends Fragment {
 
-    private TextView tvUserName, tvTotalReports, tvPendingReports, tvResolvedReports, tvNoReports;
+    private TextView tvGreeting, tvUserName, tvTotalReports, tvPendingReports, tvResolvedReports, tvNoReports;
     private LinearLayout layoutRecentReports;
     private SQLiteDatabase db;
 
@@ -30,6 +32,7 @@ public class HomeFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
+        tvGreeting = view.findViewById(R.id.tv_greeting);
         tvUserName = view.findViewById(R.id.tv_user_name);
         tvTotalReports = view.findViewById(R.id.tv_total_reports);
         tvPendingReports = view.findViewById(R.id.tv_pending_reports);
@@ -37,9 +40,23 @@ public class HomeFragment extends Fragment {
         tvNoReports = view.findViewById(R.id.tv_no_reports);
         layoutRecentReports = view.findViewById(R.id.layout_recent_reports);
 
+        updateGreeting();
         loadUserData();
 
         return view;
+    }
+
+    private void updateGreeting() {
+        Calendar c = Calendar.getInstance();
+        int timeOfDay = c.get(Calendar.HOUR_OF_DAY);
+
+        String greeting;
+        if (timeOfDay >= 0 && timeOfDay < 12) {
+            greeting = "Good morning,";
+        } else {
+            greeting = "Good afternoon,";
+        }
+        tvGreeting.setText(greeting);
     }
 
     private void loadUserData() {
@@ -138,6 +155,7 @@ public class HomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        updateGreeting();
         loadUserData();
     }
 }

@@ -61,9 +61,10 @@ public class AllReportsActivity extends AppCompatActivity {
 
         findViewById(R.id.tv_back_dashboard).setOnClickListener(v -> finish());
 
-        listView.setOnItemClickListener((parent, view, position, id) -> {
-            showStatusUpdateDialog(filteredList.get(position));
-        });
+        // Removed click listener to prevent pop-up
+        // listView.setOnItemClickListener((parent, view, position, id) -> {
+        //    showStatusUpdateDialog(filteredList.get(position));
+        // });
     }
 
     private void initViews() {
