@@ -142,10 +142,10 @@ public class FarmerReportDetailsActivity extends AppCompatActivity {
         layoutConversationContainer.removeAllViews();
         try {
             String query =
-                "SELECT 'vet' AS sender, response_type, message, NULL AS photo, date_responded AS msg_date " +
-                "FROM responses WHERE report_id = ? " +
+                "SELECT 'vet' AS sender, v.firstname, v.lastname, r.response_type, r.message, NULL AS photo, r.date_responded AS msg_date " +
+                "FROM responses r LEFT JOIN users v ON r.vet_phone = v.phone WHERE r.report_id = ? " +
                 "UNION ALL " +
-                "SELECT 'farmer' AS sender, 'Farmer reply' AS response_type, farmer_message AS message, photo, date_submitted AS msg_date " +
+                "SELECT 'farmer' AS sender, '' AS firstname, '' AS lastname, 'Farmer reply' AS response_type, farmer_message AS message, photo, date_submitted AS msg_date " +
                 "FROM more_info WHERE report_id = ? " +
                 "ORDER BY msg_date ASC";
 
@@ -162,10 +162,7 @@ public class FarmerReportDetailsActivity extends AppCompatActivity {
                     String sender = cursor.getString(cursor.getColumnIndexOrThrow("sender"));
                     String message = cursor.getString(cursor.getColumnIndexOrThrow("message"));
                     String date = cursor.getString(cursor.getColumnIndexOrThrow("msg_date"));
-                    String type = cursor.getString(cursor.getColumnIndexOrThrow("response_type"));
                     byte[] photoBytes = cursor.getBlob(cursor.getColumnIndexOrThrow("photo"));
-
-                    if (type.equals("Request more information")) type = "Vet Reply";
 
                     int layoutRes = sender.equals("vet") ? R.layout.item_bubble_vet : R.layout.item_bubble_farmer;
                     View chatView = LayoutInflater.from(this).inflate(layoutRes, layoutConversationContainer, false);
@@ -178,7 +175,16 @@ public class FarmerReportDetailsActivity extends AppCompatActivity {
 
                     tvMsg.setText(message);
                     tvDt.setText(date);
-                    if (tvTp != null) tvTp.setText(type);
+                    if (tvTp != null) {
+                        if (sender.equals("farmer")) {
+                            tvTp.setText("Your reply");
+                        } else {
+                            String vFirst = cursor.getString(cursor.getColumnIndexOrThrow("firstname"));
+                            String vLast = cursor.getString(cursor.getColumnIndexOrThrow("lastname"));
+                            String vetName = (vFirst != null) ? "Dr. " + vFirst + " " + vLast : "Dr. Vet";
+                            tvTp.setText(vetName);
+                        }
+                    }
 
                     if (photoBytes != null && photoBytes.length > 0 && ivBubblePhoto != null) {
                         Bitmap bitmap = BitmapFactory.decodeByteArray(photoBytes, 0, photoBytes.length);
