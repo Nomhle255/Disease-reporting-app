@@ -104,22 +104,27 @@ public class MainActivity extends AppCompatActivity {
                 "status_changed_to VARCHAR, " +
                 "date_responded VARCHAR);");
 
-        // More Info table (Farmer replies)
+        // More Info table (Farmer replies) - Added photo BLOB column
         db.execSQL("CREATE TABLE IF NOT EXISTS more_info(" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "report_id INTEGER, " +
                 "response_id INTEGER, " +
                 "farmer_phone VARCHAR, " +
                 "farmer_message TEXT, " +
+                "photo BLOB, " +
                 "date_submitted VARCHAR);");
         
-        // Handle migration for existing databases
+        // Handle migrations for existing databases
         try {
             db.execSQL("ALTER TABLE reports ADD COLUMN status VARCHAR DEFAULT 'Pending'");
         } catch (Exception ignored) {}
         
         try {
             db.execSQL("ALTER TABLE reports ADD COLUMN gps_location VARCHAR");
+        } catch (Exception ignored) {}
+
+        try {
+            db.execSQL("ALTER TABLE more_info ADD COLUMN photo BLOB");
         } catch (Exception ignored) {}
     }
 

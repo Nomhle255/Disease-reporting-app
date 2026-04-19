@@ -87,7 +87,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="Vet responded · Farm visit scheduled 12 Apr"
+            android:text="Click to view vet response"
             android:textColor="#616161"
             android:textSize="12sp" />
 

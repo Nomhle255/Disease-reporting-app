@@ -60,6 +60,9 @@
             android:name=".FarmerReportHistoryActivity"
             android:exported="false" />
         <activity
+            android:name=".FarmerReportDetailsActivity"
+            android:exported="false" />
+        <activity
             android:name=".FarmerNotificationsActivity"
             android:exported="false" />
     </application>
