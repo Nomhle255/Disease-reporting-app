@@ -21,7 +21,7 @@ import androidx.fragment.app.FragmentTransaction;
 
 public class VetDashboardActivity extends AppCompatActivity {
 
-    private TextView tvVetName, tvNewCount, tvActiveCount, tvTotalCount;
+    private TextView tvVetName, tvNewCount, tvResolvedCount, tvTotalCount;
     private LinearLayout layoutHomeTab, layoutCasesTab, layoutAlertsTab, layoutProfileTab, layoutRecentReports;
     private View scrollView, fragmentContainer;
     private ImageView ivHome, ivCases, ivAlerts, ivProfile;
@@ -60,7 +60,7 @@ public class VetDashboardActivity extends AppCompatActivity {
         tvVetName = findViewById(R.id.tv_vet_name);
         
         tvNewCount = findViewById(R.id.tv_stat_new);
-        tvActiveCount = findViewById(R.id.tv_stat_active);
+        tvResolvedCount = findViewById(R.id.tv_stat_active); // This is the 'Resolved' card in layout
         tvTotalCount = findViewById(R.id.tv_stat_total);
 
         layoutRecentReports = findViewById(R.id.layout_recent_reports);
@@ -89,14 +89,17 @@ public class VetDashboardActivity extends AppCompatActivity {
 
     private void updateStats() {
         try {
+            // New / Pending
             Cursor cNew = db.rawQuery("SELECT COUNT(*) FROM reports WHERE status = 'Pending' OR status IS NULL", null);
             if (cNew.moveToFirst()) tvNewCount.setText(String.valueOf(cNew.getInt(0)));
             cNew.close();
 
-            Cursor cActive = db.rawQuery("SELECT COUNT(*) FROM reports WHERE status = 'Investigating' OR status = 'Scheduled' OR status = 'Advice Provided'", null);
-            if (cActive.moveToFirst()) tvActiveCount.setText(String.valueOf(cActive.getInt(0)));
-            cActive.close();
+            // Resolved only
+            Cursor cResolved = db.rawQuery("SELECT COUNT(*) FROM reports WHERE status = 'Resolved'", null);
+            if (cResolved.moveToFirst()) tvResolvedCount.setText(String.valueOf(cResolved.getInt(0)));
+            cResolved.close();
 
+            // Total
             Cursor cTotal = db.rawQuery("SELECT COUNT(*) FROM reports", null);
             if (cTotal.moveToFirst()) tvTotalCount.setText(String.valueOf(cTotal.getInt(0)));
             cTotal.close();
