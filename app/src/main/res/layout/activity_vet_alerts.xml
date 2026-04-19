@@ -99,7 +99,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
                 android:text="Alert Details"
-                android:textColor="@color/header_green"
+                android:textColor="@color/black"
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
@@ -120,6 +120,7 @@
                 android:background="@drawable/edit_text_bg"
                 android:hint="Enter disease name (e.g. Anthrax, FMD)"
                 android:padding="12dp"
+                android:textColor="@color/black"
                 android:textSize="14sp" />
 
             <TextView
@@ -140,16 +141,16 @@
                 android:columnCount="2"
                 android:alignmentMode="alignMargins">
 
-                <CheckBox android:id="@+id/cb_maseru" android:layout_width="0dp" android:layout_columnWeight="1" android:text="Maseru" />
-                <CheckBox android:id="@+id/cb_leribe" android:layout_width="0dp" android:layout_columnWeight="1" android:text="Leribe" />
-                <CheckBox android:id="@+id/cb_berea" android:layout_width="0dp" android:layout_columnWeight="1" android:text="Berea" />
-                <CheckBox android:id="@+id/cb_mafeteng" android:layout_width="0dp" android:layout_columnWeight="1" android:text="Mafeteng" />
-                <CheckBox android:id="@+id/cb_mohale" android:layout_width="0dp" android:layout_columnWeight="1" android:text="Mohale's Hoek" />
-                <CheckBox android:id="@+id/cb_quthing" android:layout_width="0dp" android:layout_columnWeight="1" android:text="Quthing" />
-                <CheckBox android:id="@+id/cb_qacha" android:layout_width="0dp" android:layout_columnWeight="1" android:text="Qacha's Nek" />
-                <CheckBox android:id="@+id/cb_mokhotlong" android:layout_width="0dp" android:layout_columnWeight="1" android:text="Mokhotlong" />
-                <CheckBox android:id="@+id/cb_thaba" android:layout_width="0dp" android:layout_columnWeight="1" android:text="Thaba-Tseka" />
-                <CheckBox android:id="@+id/cb_butha" android:layout_width="0dp" android:layout_columnWeight="1" android:text="Butha-Buthe" />
+                <CheckBox android:id="@+id/cb_maseru" android:layout_width="0dp" android:layout_columnWeight="1" android:text="Maseru" android:textColor="@color/black" />
+                <CheckBox android:id="@+id/cb_leribe" android:layout_width="0dp" android:layout_columnWeight="1" android:text="Leribe" android:textColor="@color/black" />
+                <CheckBox android:id="@+id/cb_berea" android:layout_width="0dp" android:layout_columnWeight="1" android:text="Berea" android:textColor="@color/black" />
+                <CheckBox android:id="@+id/cb_mafeteng" android:layout_width="0dp" android:layout_columnWeight="1" android:text="Mafeteng" android:textColor="@color/black" />
+                <CheckBox android:id="@+id/cb_mohale" android:layout_width="0dp" android:layout_columnWeight="1" android:text="Mohale's Hoek" android:textColor="@color/black" />
+                <CheckBox android:id="@+id/cb_quthing" android:layout_width="0dp" android:layout_columnWeight="1" android:text="Quthing" android:textColor="@color/black" />
+                <CheckBox android:id="@+id/cb_qacha" android:layout_width="0dp" android:layout_columnWeight="1" android:text="Qacha's Nek" android:textColor="@color/black" />
+                <CheckBox android:id="@+id/cb_mokhotlong" android:layout_width="0dp" android:layout_columnWeight="1" android:text="Mokhotlong" android:textColor="@color/black" />
+                <CheckBox android:id="@+id/cb_thaba" android:layout_width="0dp" android:layout_columnWeight="1" android:text="Thaba-Tseka" android:textColor="@color/black" />
+                <CheckBox android:id="@+id/cb_butha" android:layout_width="0dp" android:layout_columnWeight="1" android:text="Butha-Buthe" android:textColor="@color/black" />
             </GridLayout>
 
             <TextView
@@ -171,6 +172,7 @@
                 android:hint="Compose your message..."
                 android:minLines="4"
                 android:padding="12dp"
+                android:textColor="@color/black"
                 android:textSize="14sp" />
 
             <com.google.android.material.button.MaterialButton
