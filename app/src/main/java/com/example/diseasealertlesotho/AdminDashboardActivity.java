@@ -164,6 +164,18 @@ public class AdminDashboardActivity extends AppCompatActivity {
                 ivHome.setColorFilter(green);
                 tvHome.setTextColor(green);
                 break;
+            case "USERS":
+                ivUsers.setColorFilter(green);
+                tvUsers.setTextColor(green);
+                break;
+            case "REPORTS":
+                ivReports.setColorFilter(green);
+                tvReports.setTextColor(green);
+                break;
+            case "STATS":
+                ivStats.setColorFilter(green);
+                tvStats.setTextColor(green);
+                break;
             case "PROFILE":
                 ivProfile.setColorFilter(green);
                 tvProfile.setTextColor(green);
@@ -193,6 +205,8 @@ public class AdminDashboardActivity extends AppCompatActivity {
         String openFragment = intent.getStringExtra("OPEN_FRAGMENT");
         if ("PROFILE".equals(openFragment)) {
             loadProfileFragment();
+        } else {
+            updateNavUI("HOME");
         }
     }
 }

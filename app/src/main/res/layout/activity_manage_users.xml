@@ -58,13 +58,13 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_filter_all"
-                style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="All"
                 android:textAllCaps="false"
-                android:backgroundTint="@color/header_green"
-                android:textColor="@color/white"
+                android:textColor="@color/black"
+                app:strokeColor="@color/border_color"
                 app:cornerRadius="20dp" />
 
             <com.google.android.material.button.MaterialButton

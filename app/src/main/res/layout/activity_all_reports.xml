@@ -93,14 +93,14 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_filter_all"
-                style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:backgroundTint="#4527A0"
                 android:text="All"
                 android:textAllCaps="false"
-                android:textColor="@color/white"
-                app:cornerRadius="20dp" />
+                android:textColor="@color/black"
+                app:cornerRadius="20dp"
+                app:strokeColor="@color/border_color" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_filter_pending"

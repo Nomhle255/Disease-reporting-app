@@ -57,7 +57,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
-                android:text="Jan–Apr 2026"
+                android:text="Real-time data"
                 android:textColor="@color/white"
                 android:textSize="14sp"
                 app:layout_constraintStart_toStartOf="parent"
@@ -106,18 +106,20 @@
                             android:textColor="@color/black"
                             android:textStyle="bold" />
                         <TextView
+                            android:id="@+id/tv_cattle_count"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
-                            android:text="38 reports"
+                            android:text="0 reports"
                             android:textSize="12sp" />
                         <ProgressBar
+                            android:id="@+id/pb_cattle"
                             style="?android:attr/progressBarStyleHorizontal"
                             android:layout_width="match_parent"
                             android:layout_height="8dp"
                             android:layout_below="@id/tv_cattle_label"
                             android:layout_marginTop="8dp"
-                            android:progress="76"
+                            android:progress="0"
                             android:progressTint="#2E7D32" />
                     </RelativeLayout>
 
@@ -134,18 +136,20 @@
                             android:textColor="@color/black"
                             android:textStyle="bold" />
                         <TextView
+                            android:id="@+id/tv_sheep_count"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
-                            android:text="14 reports"
+                            android:text="0 reports"
                             android:textSize="12sp" />
                         <ProgressBar
+                            android:id="@+id/pb_sheep"
                             style="?android:attr/progressBarStyleHorizontal"
                             android:layout_width="match_parent"
                             android:layout_height="8dp"
                             android:layout_below="@id/tv_sheep_label"
                             android:layout_marginTop="8dp"
-                            android:progress="28"
+                            android:progress="0"
                             android:progressTint="#1976D2" />
                     </RelativeLayout>
 
@@ -162,18 +166,20 @@
                             android:textColor="@color/black"
                             android:textStyle="bold" />
                         <TextView
+                            android:id="@+id/tv_goats_count"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
-                            android:text="7 reports"
+                            android:text="0 reports"
                             android:textSize="12sp" />
                         <ProgressBar
+                            android:id="@+id/pb_goats"
                             style="?android:attr/progressBarStyleHorizontal"
                             android:layout_width="match_parent"
                             android:layout_height="8dp"
                             android:layout_below="@id/tv_goats_label"
                             android:layout_marginTop="8dp"
-                            android:progress="14"
+                            android:progress="0"
                             android:progressTint="#F57C00" />
                     </RelativeLayout>
 
@@ -190,18 +196,20 @@
                             android:textColor="@color/black"
                             android:textStyle="bold" />
                         <TextView
+                            android:id="@+id/tv_poultry_count"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_alignParentEnd="true"
-                            android:text="4 reports"
+                            android:text="0 reports"
                             android:textSize="12sp" />
                         <ProgressBar
+                            android:id="@+id/pb_poultry"
                             style="?android:attr/progressBarStyleHorizontal"
                             android:layout_width="match_parent"
                             android:layout_height="8dp"
                             android:layout_below="@id/tv_poultry_label"
                             android:layout_marginTop="8dp"
-                            android:progress="8"
+                            android:progress="0"
                             android:progressTint="#D32F2F" />
                     </RelativeLayout>
 

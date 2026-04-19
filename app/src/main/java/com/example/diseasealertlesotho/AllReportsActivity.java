@@ -25,6 +25,8 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.android.material.button.MaterialButton;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,6 +38,8 @@ public class AllReportsActivity extends AppCompatActivity {
     private List<Report> filteredList = new ArrayList<>();
     private SQLiteDatabase db;
     private String currentFilter = "All";
+    
+    private MaterialButton btnAll, btnPending, btnInvestigating, btnResolved;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,15 +64,16 @@ public class AllReportsActivity extends AppCompatActivity {
         updateSummaryStats();
 
         findViewById(R.id.tv_back_dashboard).setOnClickListener(v -> finish());
-
-        // Removed click listener to prevent pop-up
-        // listView.setOnItemClickListener((parent, view, position, id) -> {
-        //    showStatusUpdateDialog(filteredList.get(position));
-        // });
     }
 
     private void initViews() {
         listView = findViewById(R.id.list_reports);
+        
+        btnAll = findViewById(R.id.btn_filter_all);
+        btnPending = findViewById(R.id.btn_filter_pending);
+        btnInvestigating = findViewById(R.id.btn_filter_investigating);
+        btnResolved = findViewById(R.id.btn_filter_resolved);
+        
         adapter = new ReportAdapter(this, filteredList);
         listView.setAdapter(adapter);
     }
@@ -80,7 +85,6 @@ public class AllReportsActivity extends AppCompatActivity {
     private void loadReports() {
         reportList.clear();
         try {
-            // Join reports with users to get farmer name
             String query = "SELECT r.*, u.firstname, u.lastname FROM reports r " +
                           "LEFT JOIN users u ON r.user_phone = u.phone " +
                           "ORDER BY r.id DESC";
@@ -98,13 +102,11 @@ public class AllReportsActivity extends AppCompatActivity {
                     report.farmerName = (fName != null) ? fName + " " + lName : "Unknown Farmer";
                     
                     report.animalType = cursor.getString(cursor.getColumnIndexOrThrow("animal_type"));
-                    report.district = "Maseru"; // Placeholder as district isn't in schema yet
+                    report.district = "Maseru"; 
                     report.animalCount = cursor.getInt(cursor.getColumnIndexOrThrow("count"));
                     report.symptoms = cursor.getString(cursor.getColumnIndexOrThrow("symptoms"));
                     report.date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
                     report.status = cursor.getString(cursor.getColumnIndexOrThrow("status"));
-                    
-                    // Load the photo blob
                     report.photo = cursor.getBlob(cursor.getColumnIndexOrThrow("photo"));
                     
                     if (report.status == null) report.status = "Pending";
@@ -119,43 +121,6 @@ public class AllReportsActivity extends AppCompatActivity {
         applyFilters();
     }
 
-    private void showStatusUpdateDialog(Report report) {
-        String[] statuses = {"Pending", "Investigating", "Resolved"};
-        
-        new AlertDialog.Builder(this)
-                .setTitle("Update Report Status")
-                .setItems(statuses, (dialog, which) -> {
-                    String newStatus = statuses[which];
-                    updateReportStatus(report, newStatus);
-                })
-                .show();
-    }
-
-    private void updateReportStatus(Report report, String newStatus) {
-        ContentValues cv = new ContentValues();
-        cv.put("status", newStatus);
-        
-        int rows = db.update("reports", cv, "id=?", new String[]{String.valueOf(report.id)});
-        
-        if (rows > 0) {
-            report.status = newStatus;
-            
-            // Notify Farmer
-            NotificationHelper.showNotification(
-                this,
-                "Report Status Updated",
-                "The status of your report (" + report.reportId + ") has been updated to: " + newStatus,
-                FarmerReportHistoryActivity.class,
-                report.userPhone,
-                "Farmer"
-            );
-            
-            Toast.makeText(this, "Status updated to " + newStatus, Toast.LENGTH_SHORT).show();
-            loadReports();
-            updateSummaryStats();
-        }
-    }
-
     private void updateSummaryStats() {
         int pending = 0, investigating = 0, resolved = 0;
         for (Report r : reportList) {
@@ -168,10 +133,11 @@ public class AllReportsActivity extends AppCompatActivity {
         if (layoutSummary instanceof ViewGroup) {
             ViewGroup group = (ViewGroup) layoutSummary;
             if (group.getChildCount() >= 4) {
+                // Set all summary numbers to use green color as requested
                 setupSummaryCard(group.getChildAt(0), String.valueOf(reportList.size()), "Total", R.color.header_green);
-                setupSummaryCard(group.getChildAt(1), String.valueOf(pending), "Pending", R.color.status_new);
-                setupSummaryCard(group.getChildAt(2), String.valueOf(investigating), "Active", R.color.status_active);
-                setupSummaryCard(group.getChildAt(3), String.valueOf(resolved), "Resolved", R.color.status_resolved);
+                setupSummaryCard(group.getChildAt(1), String.valueOf(pending), "Pending", R.color.header_green);
+                setupSummaryCard(group.getChildAt(2), String.valueOf(investigating), "Active", R.color.header_green);
+                setupSummaryCard(group.getChildAt(3), String.valueOf(resolved), "Resolved", R.color.header_green);
             }
         }
     }
@@ -186,22 +152,44 @@ public class AllReportsActivity extends AppCompatActivity {
     }
 
     private void setupFilters() {
-        findViewById(R.id.btn_filter_all).setOnClickListener(v -> updateFilter("All"));
-        findViewById(R.id.btn_filter_pending).setOnClickListener(v -> updateFilter("Pending"));
-        findViewById(R.id.btn_filter_investigating).setOnClickListener(v -> updateFilter("Investigating"));
-        findViewById(R.id.btn_filter_resolved).setOnClickListener(v -> updateFilter("Resolved"));
+        btnAll.setOnClickListener(v -> updateFilter("All"));
+        btnPending.setOnClickListener(v -> updateFilter("Pending"));
+        btnInvestigating.setOnClickListener(v -> updateFilter("Investigating"));
+        btnResolved.setOnClickListener(v -> updateFilter("Resolved"));
+        updateFilterUI();
     }
 
     private void updateFilter(String filter) {
         currentFilter = filter;
         applyFilters();
+        updateFilterUI();
+    }
+
+    private void updateFilterUI() {
+        resetButtonStyle(btnAll);
+        resetButtonStyle(btnPending);
+        resetButtonStyle(btnInvestigating);
+        resetButtonStyle(btnResolved);
+
+        MaterialButton selected = btnAll;
+        if (currentFilter.equalsIgnoreCase("Pending")) selected = btnPending;
+        else if (currentFilter.equalsIgnoreCase("Investigating")) selected = btnInvestigating;
+        else if (currentFilter.equalsIgnoreCase("Resolved")) selected = btnResolved;
+
+        selected.setBackgroundTintList(ContextCompat.getColorStateList(this, R.color.header_green));
+        selected.setTextColor(ContextCompat.getColor(this, R.color.white));
+    }
+
+    private void resetButtonStyle(MaterialButton btn) {
+        btn.setBackgroundTintList(ContextCompat.getColorStateList(this, android.R.color.transparent));
+        btn.setTextColor(ContextCompat.getColor(this, R.color.black));
+        btn.setStrokeColor(ContextCompat.getColorStateList(this, R.color.border_color));
     }
 
     private void applyFilters() {
         filteredList.clear();
         for (Report report : reportList) {
             boolean matchesFilter = currentFilter.equals("All") || report.status.equalsIgnoreCase(currentFilter);
-            
             if (matchesFilter) {
                 filteredList.add(report);
             }
@@ -211,9 +199,7 @@ public class AllReportsActivity extends AppCompatActivity {
 
     private void setupNavigation() {
         View bottomNav = findViewById(R.id.bottom_navigation);
-        bottomNav.findViewById(R.id.layout_home_tab).setOnClickListener(v -> {
-            finish();
-        });
+        bottomNav.findViewById(R.id.layout_home_tab).setOnClickListener(v -> finish());
         bottomNav.findViewById(R.id.layout_users_tab).setOnClickListener(v -> {
             startActivity(new Intent(this, ManageUsersActivity.class));
             finish();
@@ -230,7 +216,6 @@ public class AllReportsActivity extends AppCompatActivity {
             finish();
         });
 
-        // Highlight Reports tab
         ((ImageView)bottomNav.findViewById(R.id.iv_reports_icon)).setColorFilter(ContextCompat.getColor(this, R.color.header_green));
         ((TextView)bottomNav.findViewById(R.id.tv_reports_text)).setTextColor(ContextCompat.getColor(this, R.color.header_green));
     }
@@ -245,31 +230,21 @@ public class AllReportsActivity extends AppCompatActivity {
     private class ReportAdapter extends BaseAdapter {
         private Context context;
         private List<Report> items;
-
-        public ReportAdapter(Context context, List<Report> items) {
-            this.context = context;
-            this.items = items;
-        }
-
-        @Override
-        public int getCount() { return items.size(); }
-        @Override
-        public Object getItem(int position) { return items.get(position); }
-        @Override
-        public long getItemId(int position) { return position; }
+        public ReportAdapter(Context context, List<Report> items) { this.context = context; this.items = items; }
+        @Override public int getCount() { return items.size(); }
+        @Override public Object getItem(int position) { return items.get(position); }
+        @Override public long getItemId(int position) { return position; }
 
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             if (convertView == null) {
                 convertView = LayoutInflater.from(context).inflate(R.layout.report_item, parent, false);
             }
-
             Report report = items.get(position);
             TextView tvId = convertView.findViewById(R.id.tv_report_id);
             TextView tvDate = convertView.findViewById(R.id.tv_report_date);
             TextView tvFarmerAnimal = convertView.findViewById(R.id.tv_farmer_animal);
             TextView tvDetails = convertView.findViewById(R.id.tv_location_details);
-            TextView tvAssigned = convertView.findViewById(R.id.tv_assigned_info);
             TextView tvStatus = convertView.findViewById(R.id.tv_status_tag);
             ImageView ivPhoto = convertView.findViewById(R.id.iv_report_photo);
 
@@ -278,7 +253,6 @@ public class AllReportsActivity extends AppCompatActivity {
             tvFarmerAnimal.setText(report.farmerName + " — " + report.animalType);
             tvDetails.setText(report.district + " · " + report.animalCount + " animals · " + report.symptoms);
             
-            // Set the photo if available
             if (report.photo != null && report.photo.length > 0) {
                 Bitmap bitmap = BitmapFactory.decodeByteArray(report.photo, 0, report.photo.length);
                 ivPhoto.setImageBitmap(bitmap);
@@ -286,11 +260,7 @@ public class AllReportsActivity extends AppCompatActivity {
                 ivPhoto.setImageResource(android.R.drawable.ic_menu_gallery);
             }
 
-            // For now, assigned info can just show status-related info
-            tvAssigned.setText("Status updated: " + report.date);
             tvStatus.setText(report.status);
-
-            // Dynamic status styling
             if (report.status.equalsIgnoreCase("Pending")) {
                 tvStatus.setBackgroundResource(R.drawable.tag_bg_pending);
                 tvStatus.setTextColor(ContextCompat.getColor(context, R.color.tag_pending_text));
@@ -301,7 +271,6 @@ public class AllReportsActivity extends AppCompatActivity {
                 tvStatus.setBackgroundResource(R.drawable.tag_bg_resolved);
                 tvStatus.setTextColor(ContextCompat.getColor(context, R.color.tag_resolved_text));
             }
-
             return convertView;
         }
     }
