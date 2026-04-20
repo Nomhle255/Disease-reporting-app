@@ -24,7 +24,7 @@ import com.google.android.material.button.MaterialButton;
 public class MainActivity extends AppCompatActivity {
 
     private EditText etFirstName, etLastName, etEmail, etPhone, etPassword, etConfirmPassword;
-    private AutoCompleteTextView actRole;
+    private AutoCompleteTextView actRole, actDistrict;
     private MaterialButton btnCreateAccount;
     private TextView tvLogin;
     private SQLiteDatabase db;
@@ -63,14 +63,15 @@ public class MainActivity extends AppCompatActivity {
     private void initDatabase() {
         db = openOrCreateDatabase("DiseaseAlertDB", Context.MODE_PRIVATE, null);
         
-        // Users table
+        // Users table - added district column
         db.execSQL("CREATE TABLE IF NOT EXISTS users(" +
                 "phone VARCHAR PRIMARY KEY, " +
                 "firstname VARCHAR, " +
                 "lastname VARCHAR, " +
                 "email VARCHAR, " +
                 "role VARCHAR, " +
-                "password VARCHAR);");
+                "password VARCHAR, " +
+                "district VARCHAR);");
 
         // Reports table
         db.execSQL("CREATE TABLE IF NOT EXISTS reports(" +
@@ -104,7 +105,7 @@ public class MainActivity extends AppCompatActivity {
                 "status_changed_to VARCHAR, " +
                 "date_responded VARCHAR);");
 
-        // More Info table (Farmer replies) - Added photo BLOB column
+        // More Info table (Farmer replies)
         db.execSQL("CREATE TABLE IF NOT EXISTS more_info(" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "report_id INTEGER, " +
@@ -114,17 +115,9 @@ public class MainActivity extends AppCompatActivity {
                 "photo BLOB, " +
                 "date_submitted VARCHAR);");
         
-        // Handle migrations for existing databases
+        // Handle migrations
         try {
-            db.execSQL("ALTER TABLE reports ADD COLUMN status VARCHAR DEFAULT 'Pending'");
-        } catch (Exception ignored) {}
-        
-        try {
-            db.execSQL("ALTER TABLE reports ADD COLUMN gps_location VARCHAR");
-        } catch (Exception ignored) {}
-
-        try {
-            db.execSQL("ALTER TABLE more_info ADD COLUMN photo BLOB");
+            db.execSQL("ALTER TABLE users ADD COLUMN district VARCHAR");
         } catch (Exception ignored) {}
     }
 
@@ -137,15 +130,23 @@ public class MainActivity extends AppCompatActivity {
         etConfirmPassword = findViewById(R.id.et_confirm_password);
 
         actRole = findViewById(R.id.act_role);
+        actDistrict = findViewById(R.id.act_district);
         btnCreateAccount = findViewById(R.id.btn_create_account);
         tvLogin = findViewById(R.id.tv_login);
     }
 
     private void setupDropdowns() {
+        // Roles
         String[] roles = getResources().getStringArray(R.array.roles_array);
         ArrayAdapter<String> roleAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, roles);
         actRole.setAdapter(roleAdapter);
         actRole.setText(roles[0], false);
+
+        // Districts
+        String[] districts = getResources().getStringArray(R.array.districts_array);
+        ArrayAdapter<String> districtAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, districts);
+        actDistrict.setAdapter(districtAdapter);
+        actDistrict.setText(districts[0], false);
     }
 
     private void saveToDatabase() {
@@ -154,6 +155,7 @@ public class MainActivity extends AppCompatActivity {
         String fName = etFirstName.getText().toString().trim();
         String lName = etLastName.getText().toString().trim();
         String role = actRole.getText().toString().trim();
+        String district = actDistrict.getText().toString().trim();
         String pwd = etPassword.getText().toString().trim();
 
         Cursor cursor = db.rawQuery("SELECT * FROM users WHERE phone = ?", new String[]{phone});
@@ -165,8 +167,8 @@ public class MainActivity extends AppCompatActivity {
         cursor.close();
 
         try {
-            db.execSQL("INSERT INTO users VALUES(?, ?, ?, ?, ?, ?)",
-                    new Object[]{phone, fName, lName, email, role, pwd});
+            db.execSQL("INSERT INTO users (phone, firstname, lastname, email, role, password, district) VALUES(?, ?, ?, ?, ?, ?, ?)",
+                    new Object[]{phone, fName, lName, email, role, pwd, district});
             Toast.makeText(this, "Account created successfully", Toast.LENGTH_SHORT).show();
             startActivity(new Intent(MainActivity.this, LoginActivity.class));
             finish();

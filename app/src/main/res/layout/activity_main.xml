@@ -70,113 +70,102 @@
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
-                <!-- Names Row -->
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <!-- First Name -->
+                <TextView
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:orientation="horizontal">
+                    android:text="First Name"
+                    android:textColor="@color/black" />
 
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="First Name"
-                            android:textColor="@color/black" />
-
-                        <EditText
-                            android:id="@+id/et_first_name"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:background="@drawable/edit_text_bg"
-                            android:textColor="@color/black"
-                            android:inputType="textPersonName" />
-                    </LinearLayout>
-
-                    <Space
-                        android:layout_width="16dp"
-                        android:layout_height="wrap_content" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Last Name"
-                            android:textColor="@color/black" />
-
-                        <EditText
-                            android:id="@+id/et_last_name"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:background="@drawable/edit_text_bg"
-                            android:textColor="@color/black"
-                            android:inputType="textPersonName" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- Email and Phone Row -->
-                <LinearLayout
+                <EditText
+                    android:id="@+id/et_first_name"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:background="@drawable/edit_text_bg"
+                    android:textColor="@color/black"
+                    android:inputType="textPersonName" />
+
+                <!-- Last Name -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
-                    android:orientation="horizontal">
+                    android:text="Last Name"
+                    android:textColor="@color/black" />
 
-                    <LinearLayout
-                        android:layout_width="0dp"
+                <EditText
+                    android:id="@+id/et_last_name"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/edit_text_bg"
+                    android:textColor="@color/black"
+                    android:inputType="textPersonName" />
+
+                <!-- Email Address -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Email Address"
+                    android:textColor="@color/black" />
+
+                <EditText
+                    android:id="@+id/et_email"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/edit_text_bg"
+                    android:textColor="@color/black"
+                    android:inputType="textEmailAddress" />
+
+                <!-- Phone -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Phone"
+                    android:textColor="@color/black" />
+
+                <EditText
+                    android:id="@+id/et_phone"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/edit_text_bg"
+                    android:textColor="@color/black"
+                    android:inputType="phone" />
+
+                <!-- District Selection Dropdown -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="District"
+                    android:textColor="@color/black" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/til_district"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox.ExposedDropdownMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    app:boxBackgroundColor="@color/white"
+                    app:boxCornerRadiusBottomEnd="12dp"
+                    app:boxCornerRadiusBottomStart="12dp"
+                    app:boxCornerRadiusTopEnd="12dp"
+                    app:boxCornerRadiusTopStart="12dp"
+                    app:boxStrokeWidth="0dp"
+                    app:boxStrokeWidthFocused="0dp">
+
+                    <AutoCompleteTextView
+                        android:id="@+id/act_district"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:textColor="@color/black"
+                        android:inputType="none"
+                        android:padding="16dp"
+                        android:hint="Select District" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Email Address"
-                            android:textColor="@color/black" />
-
-                        <EditText
-                            android:id="@+id/et_email"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:background="@drawable/edit_text_bg"
-                            android:textColor="@color/black"
-                            android:inputType="textEmailAddress" />
-                    </LinearLayout>
-
-                    <Space
-                        android:layout_width="16dp"
-                        android:layout_height="wrap_content" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Phone"
-                            android:textColor="@color/black" />
-
-                        <EditText
-                            android:id="@+id/et_phone"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:background="@drawable/edit_text_bg"
-                            android:textColor="@color/black"
-                            android:inputType="phone" />
-                    </LinearLayout>
-                </LinearLayout>
+                </com.google.android.material.textfield.TextInputLayout>
 
                 <!-- Role Selection Dropdown -->
                 <TextView
@@ -205,7 +194,9 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:textColor="@color/black"
-                        android:inputType="none" />
+                        android:inputType="none"
+                        android:padding="16dp"
+                        android:hint="Select Role" />
 
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -219,58 +210,37 @@
                     android:textSize="18sp"
                     android:textStyle="bold" />
 
-                <LinearLayout
+                <!-- Password -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Password"
+                    android:textColor="@color/black" />
+
+                <EditText
+                    android:id="@+id/et_password"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:orientation="horizontal">
+                    android:background="@drawable/edit_text_bg"
+                    android:textColor="@color/black"
+                    android:inputType="textPassword" />
 
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                <!-- Confirm Password -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Confirm Password"
+                    android:textColor="@color/black" />
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Password"
-                            android:textColor="@color/black" />
-
-                        <EditText
-                            android:id="@+id/et_password"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:background="@drawable/edit_text_bg"
-                            android:textColor="@color/black"
-                            android:inputType="textPassword" />
-                    </LinearLayout>
-
-                    <Space
-                        android:layout_width="16dp"
-                        android:layout_height="wrap_content" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Confirm"
-                            android:textColor="@color/black" />
-
-                        <EditText
-                            android:id="@+id/et_confirm_password"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:background="@drawable/edit_text_bg"
-                            android:textColor="@color/black"
-                            android:inputType="textPassword" />
-                    </LinearLayout>
-                </LinearLayout>
+                <EditText
+                    android:id="@+id/et_confirm_password"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/edit_text_bg"
+                    android:textColor="@color/black"
+                    android:inputType="textPassword" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_create_account"
