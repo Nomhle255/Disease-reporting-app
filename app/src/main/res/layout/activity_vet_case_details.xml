@@ -104,48 +104,6 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- New Report Alert Banner -->
-            <LinearLayout
-                android:id="@+id/layout_new_report_banner"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:background="@drawable/bg_banner_warning"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:padding="12dp">
-
-                <View
-                    android:layout_width="7dp"
-                    android:layout_height="7dp"
-                    android:background="@drawable/bg_dot_orange"
-                    android:layout_marginEnd="10dp" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="New report submitted"
-                        android:textColor="#E65100"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="No response sent yet — farmer is waiting"
-                        android:textColor="#BF360C"
-                        android:textSize="11sp" />
-
-                </LinearLayout>
-
-            </LinearLayout>
-
             <!-- ── Farmer Report Details Card ── -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"

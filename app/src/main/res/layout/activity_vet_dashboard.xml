@@ -261,12 +261,30 @@
             android:focusable="true"
             android:background="?attr/selectableItemBackground"
             android:orientation="vertical">
-            <ImageView
-                android:id="@+id/iv_cases_icon"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_agenda"
-                app:tint="#757575" />
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+                <ImageView
+                    android:id="@+id/iv_cases_icon"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@android:drawable/ic_menu_agenda"
+                    app:tint="#757575" />
+                <TextView
+                    android:id="@+id/tv_cases_badge"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_gravity="top|end"
+                    android:layout_marginTop="-4dp"
+                    android:layout_marginEnd="-6dp"
+                    android:background="@drawable/bg_circle_green"
+                    android:gravity="center"
+                    android:text="0"
+                    android:textColor="@color/white"
+                    android:textSize="9sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+            </FrameLayout>
             <TextView
                 android:id="@+id/tv_cases_text"
                 android:layout_width="wrap_content"

@@ -63,6 +63,13 @@ public class AllReportsActivity extends AppCompatActivity {
         setupNavigation();
         updateSummaryStats();
 
+        listView.setOnItemClickListener((parent, view, position, id) -> {
+            Report report = filteredList.get(position);
+            Intent intent = new Intent(this, AdminReportDetailsActivity.class);
+            intent.putExtra("REPORT_ID", report.id);
+            startActivity(intent);
+        });
+
         findViewById(R.id.tv_back_dashboard).setOnClickListener(v -> finish());
     }
 

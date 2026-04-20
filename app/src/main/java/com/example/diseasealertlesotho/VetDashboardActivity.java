@@ -21,7 +21,7 @@ import androidx.fragment.app.FragmentTransaction;
 
 public class VetDashboardActivity extends AppCompatActivity {
 
-    private TextView tvVetName, tvNewCount, tvResolvedCount, tvTotalCount;
+    private TextView tvVetName, tvNewCount, tvResolvedCount, tvTotalCount, tvCasesBadge;
     private LinearLayout layoutHomeTab, layoutCasesTab, layoutAlertsTab, layoutProfileTab, layoutRecentReports;
     private View scrollView, fragmentContainer;
     private ImageView ivHome, ivCases, ivAlerts, ivProfile;
@@ -62,6 +62,7 @@ public class VetDashboardActivity extends AppCompatActivity {
         tvNewCount = findViewById(R.id.tv_stat_new);
         tvResolvedCount = findViewById(R.id.tv_stat_active); // This is the 'Resolved' card in layout
         tvTotalCount = findViewById(R.id.tv_stat_total);
+        tvCasesBadge = findViewById(R.id.tv_cases_badge);
 
         layoutRecentReports = findViewById(R.id.layout_recent_reports);
         
@@ -91,8 +92,20 @@ public class VetDashboardActivity extends AppCompatActivity {
         try {
             // New / Pending
             Cursor cNew = db.rawQuery("SELECT COUNT(*) FROM reports WHERE status = 'Pending' OR status IS NULL", null);
-            if (cNew.moveToFirst()) tvNewCount.setText(String.valueOf(cNew.getInt(0)));
+            int newCount = 0;
+            if (cNew.moveToFirst()) {
+                newCount = cNew.getInt(0);
+                tvNewCount.setText(String.valueOf(newCount));
+            }
             cNew.close();
+
+            // Update Cases Badge
+            if (newCount > 0) {
+                tvCasesBadge.setText(String.valueOf(newCount));
+                tvCasesBadge.setVisibility(View.VISIBLE);
+            } else {
+                tvCasesBadge.setVisibility(View.GONE);
+            }
 
             // Resolved only
             Cursor cResolved = db.rawQuery("SELECT COUNT(*) FROM reports WHERE status = 'Resolved'", null);

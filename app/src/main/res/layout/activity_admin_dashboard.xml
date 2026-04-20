@@ -278,53 +278,6 @@
 
                     <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EEEEEE" android:layout_marginHorizontal="16dp"/>
 
-                    <!-- Send Alerts -->
-                    <LinearLayout
-                        android:id="@+id/layout_send_alerts"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:background="?attr/selectableItemBackground"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:padding="16dp">
-                        <ImageView
-                            android:layout_width="40dp"
-                            android:layout_height="40dp"
-                            android:padding="8dp"
-                            android:background="@drawable/edit_text_bg"
-                            android:backgroundTint="#F5F5F5"
-                            android:src="@android:drawable/ic_popup_reminder"
-                            app:tint="@color/header_green" />
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="16dp"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Send Alerts"
-                                android:textColor="@color/black"
-                                android:textStyle="bold" />
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Broadcast to farmers"
-                                android:textSize="12sp"
-                                android:textColor="#757575"/>
-                        </LinearLayout>
-                        <ImageView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:src="@android:drawable/ic_media_play"
-                            app:tint="@color/border_color" />
-                    </LinearLayout>
-
-                    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#EEEEEE" android:layout_marginHorizontal="16dp"/>
-
                     <!-- Statistics -->
                     <LinearLayout
                         android:id="@+id/layout_statistics"

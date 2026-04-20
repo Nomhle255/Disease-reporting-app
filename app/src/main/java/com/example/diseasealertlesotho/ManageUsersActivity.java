@@ -60,14 +60,6 @@ public class ManageUsersActivity extends AppCompatActivity {
         setupNavigation();
 
         findViewById(R.id.tv_back_dashboard).setOnClickListener(v -> finish());
-        
-        View btnAddUser = findViewById(R.id.btn_add_user);
-        if (btnAddUser != null) {
-            btnAddUser.setOnClickListener(v -> {
-                Intent intent = new Intent(ManageUsersActivity.this, MainActivity.class);
-                startActivity(intent);
-            });
-        }
     }
 
     private void initViews() {

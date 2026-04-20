@@ -114,7 +114,7 @@
         app:cardBackgroundColor="@color/white"
         app:cardCornerRadius="16dp"
         app:cardElevation="4dp"
-        app:layout_constraintBottom_toTopOf="@+id/btn_add_user"
+        app:layout_constraintBottom_toTopOf="@+id/bottom_navigation"
         app:layout_constraintTop_toBottomOf="@id/scroll_filters">
 
         <FrameLayout
@@ -141,21 +141,6 @@
                 android:visibility="gone" />
         </FrameLayout>
     </androidx.cardview.widget.CardView>
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_add_user"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:layout_marginHorizontal="16dp"
-        android:layout_marginBottom="16dp"
-        android:text="+ Add New User"
-        android:textAllCaps="false"
-        android:textColor="@color/white"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        app:backgroundTint="@color/header_green"
-        app:cornerRadius="12dp"
-        app:layout_constraintBottom_toTopOf="@+id/bottom_navigation" />
 
     <!-- Bottom Navigation Bar -->
     <include

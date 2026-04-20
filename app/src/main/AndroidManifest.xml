@@ -54,6 +54,9 @@
             android:name=".AllReportsActivity"
             android:exported="false" />
         <activity
+            android:name=".AdminReportDetailsActivity"
+            android:exported="false" />
+        <activity
             android:name=".FarmerDashboardActivity"
             android:exported="false" />
         <activity
