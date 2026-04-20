@@ -32,7 +32,10 @@ public class ProfileFragment extends Fragment {
         initViews(view);
         loadUserData();
 
-        btnEditProfile.setOnClickListener(v -> Toast.makeText(getContext(), "Edit Profile clicked", Toast.LENGTH_SHORT).show());
+        btnEditProfile.setOnClickListener(v -> {
+            Intent intent = new Intent(getActivity(), EditProfileActivity.class);
+            startActivity(intent);
+        });
 
         btnLogout.setOnClickListener(v -> {
             SharedPreferences prefs = getActivity().getSharedPreferences("UserSession", Context.MODE_PRIVATE);
@@ -44,6 +47,12 @@ public class ProfileFragment extends Fragment {
         });
 
         return view;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        loadUserData();
     }
 
     private void initViews(View view) {
@@ -75,9 +84,6 @@ public class ProfileFragment extends Fragment {
                 String role = cursor.getString(cursor.getColumnIndexOrThrow("role"));
                 String email = cursor.getString(cursor.getColumnIndexOrThrow("email"));
                 
-                // Fetch new fields, handle potential null/missing values
-                String nationalId = "";
-                try { nationalId = cursor.getString(cursor.getColumnIndexOrThrow("national_id")); } catch (Exception ignored) {}
                 String village = "";
                 try { village = cursor.getString(cursor.getColumnIndexOrThrow("village")); } catch (Exception ignored) {}
                 String district = "";
@@ -87,6 +93,8 @@ public class ProfileFragment extends Fragment {
                 tvName.setText(fullName);
                 tvPhone.setText(phone);
                 tvEmail.setText(email);
+                tvVillage.setText(village != null && !village.isEmpty() ? village : "Not set");
+                tvDistrict.setText(district != null && !district.isEmpty() ? district : "Not set");
                 
                 String roleDistStr = role + (district != null && !district.isEmpty() ? " · " + district + " District" : "");
                 tvRoleDistrict.setText(roleDistStr);

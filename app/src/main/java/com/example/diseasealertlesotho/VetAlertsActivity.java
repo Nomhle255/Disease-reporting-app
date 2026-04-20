@@ -1,6 +1,9 @@
 package com.example.diseasealertlesotho;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.CheckBox;
@@ -11,20 +14,25 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.button.MaterialButton;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class VetAlertsActivity extends AppCompatActivity {
 
     private EditText etDiseaseType, etMessage;
     private MaterialButton btnSend;
     private List<CheckBox> districtCheckBoxes = new ArrayList<>();
+    private SQLiteDatabase db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_vet_alerts);
 
+        db = openOrCreateDatabase("DiseaseAlertDB", Context.MODE_PRIVATE, null);
         initViews();
         setupClickListeners();
         setupNavigation();
@@ -70,16 +78,41 @@ public class VetAlertsActivity extends AppCompatActivity {
                 return;
             }
 
-            // Mock sending broadcast
-            Toast.makeText(this, "Alert for " + disease + " broadcasted to farmers in " + selectedDistricts.size() + " districts!", Toast.LENGTH_LONG).show();
+            sendAlerts(disease, message, selectedDistricts);
+        });
+
+        findViewById(R.id.tv_back_dashboard).setOnClickListener(v -> finish());
+    }
+
+    private void sendAlerts(String disease, String message, List<String> districts) {
+        try {
+            String title = "DISEASE ALERT: " + disease;
+            
+            for (String district : districts) {
+                String target = "DISTRICT:" + district;
+                
+                // Use NotificationHelper to save to DB and trigger a system notification
+                // Note: In a local app, this triggers on the current device.
+                NotificationHelper.showNotification(
+                        this,
+                        title,
+                        message,
+                        FarmerNotificationsActivity.class,
+                        target,
+                        "ALERT"
+                );
+            }
+
+            Toast.makeText(this, "Alerts broadcasted successfully!", Toast.LENGTH_SHORT).show();
             
             // Reset form
             etDiseaseType.setText("");
             etMessage.setText("");
             for (CheckBox cb : districtCheckBoxes) cb.setChecked(false);
-        });
 
-        findViewById(R.id.tv_back_dashboard).setOnClickListener(v -> finish());
+        } catch (Exception e) {
+            Toast.makeText(this, "Error sending alerts: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void setupNavigation() {

@@ -63,15 +63,16 @@ public class MainActivity extends AppCompatActivity {
     private void initDatabase() {
         db = openOrCreateDatabase("DiseaseAlertDB", Context.MODE_PRIVATE, null);
         
-        // Users table - added district column
+        // Users table - email is primary key, phone is unique
         db.execSQL("CREATE TABLE IF NOT EXISTS users(" +
-                "phone VARCHAR PRIMARY KEY, " +
+                "email VARCHAR PRIMARY KEY, " +
+                "phone VARCHAR UNIQUE, " +
                 "firstname VARCHAR, " +
                 "lastname VARCHAR, " +
-                "email VARCHAR, " +
                 "role VARCHAR, " +
                 "password VARCHAR, " +
-                "district VARCHAR);");
+                "district VARCHAR, " +
+                "village VARCHAR);");
 
         // Reports table
         db.execSQL("CREATE TABLE IF NOT EXISTS reports(" +
@@ -116,9 +117,8 @@ public class MainActivity extends AppCompatActivity {
                 "date_submitted VARCHAR);");
         
         // Handle migrations
-        try {
-            db.execSQL("ALTER TABLE users ADD COLUMN district VARCHAR");
-        } catch (Exception ignored) {}
+        try { db.execSQL("ALTER TABLE users ADD COLUMN district VARCHAR"); } catch (Exception ignored) {}
+        try { db.execSQL("ALTER TABLE users ADD COLUMN village VARCHAR"); } catch (Exception ignored) {}
     }
 
     private void initViews() {
@@ -140,13 +140,11 @@ public class MainActivity extends AppCompatActivity {
         String[] roles = getResources().getStringArray(R.array.roles_array);
         ArrayAdapter<String> roleAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, roles);
         actRole.setAdapter(roleAdapter);
-        actRole.setText(roles[0], false);
 
         // Districts
         String[] districts = getResources().getStringArray(R.array.districts_array);
         ArrayAdapter<String> districtAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, districts);
         actDistrict.setAdapter(districtAdapter);
-        actDistrict.setText(districts[0], false);
     }
 
     private void saveToDatabase() {
@@ -158,17 +156,18 @@ public class MainActivity extends AppCompatActivity {
         String district = actDistrict.getText().toString().trim();
         String pwd = etPassword.getText().toString().trim();
 
-        Cursor cursor = db.rawQuery("SELECT * FROM users WHERE phone = ?", new String[]{phone});
+        // Check if user already exists (by email or phone)
+        Cursor cursor = db.rawQuery("SELECT * FROM users WHERE email = ? OR phone = ?", new String[]{email, phone});
         if (cursor.getCount() > 0) {
-            showMessage("Error", "User with this phone number already exists");
+            showMessage("Error", "User with this email or phone already exists");
             cursor.close();
             return;
         }
         cursor.close();
 
         try {
-            db.execSQL("INSERT INTO users (phone, firstname, lastname, email, role, password, district) VALUES(?, ?, ?, ?, ?, ?, ?)",
-                    new Object[]{phone, fName, lName, email, role, pwd, district});
+            db.execSQL("INSERT INTO users (email, phone, firstname, lastname, role, password, district) VALUES(?, ?, ?, ?, ?, ?, ?)",
+                    new Object[]{email, phone, fName, lName, role, pwd, district});
             Toast.makeText(this, "Account created successfully", Toast.LENGTH_SHORT).show();
             startActivity(new Intent(MainActivity.this, LoginActivity.class));
             finish();
@@ -192,6 +191,14 @@ public class MainActivity extends AppCompatActivity {
         }
         if (etEmail.getText().toString().trim().isEmpty()) {
             etEmail.setError("Required");
+            return false;
+        }
+        if (actDistrict.getText().toString().trim().isEmpty()) {
+            actDistrict.setError("Required");
+            return false;
+        }
+        if (actRole.getText().toString().trim().isEmpty()) {
+            actRole.setError("Required");
             return false;
         }
         if (etPassword.getText().toString().length() < 6) {

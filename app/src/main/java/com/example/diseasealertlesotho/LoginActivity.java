@@ -104,15 +104,21 @@ public class LoginActivity extends AppCompatActivity {
             String firstName = c.getString(c.getColumnIndexOrThrow("firstname"));
             String lastName = c.getString(c.getColumnIndexOrThrow("lastname"));
             String phone = c.getString(c.getColumnIndexOrThrow("phone"));
+            String email = c.getString(c.getColumnIndexOrThrow("email"));
+            
+            String district = "";
+            try { district = c.getString(c.getColumnIndexOrThrow("district")); } catch (Exception ignored) {}
             
             // SAVE SESSION
             SharedPreferences sp = getSharedPreferences("UserSession", MODE_PRIVATE);
             SharedPreferences.Editor editor = sp.edit();
             editor.putString("phone", phone);
+            editor.putString("email", email);
             editor.putString("firstname", firstName);
             editor.putString("lastname", lastName);
             editor.putString("name", firstName + " " + lastName);
             editor.putString("role", role);
+            editor.putString("district", district);
             editor.putBoolean("isLoggedIn", true);
             editor.apply();
 

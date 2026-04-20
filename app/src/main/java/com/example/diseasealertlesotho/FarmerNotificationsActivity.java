@@ -70,22 +70,47 @@ public class FarmerNotificationsActivity extends AppCompatActivity {
 
         SharedPreferences sp = getSharedPreferences("UserSession", MODE_PRIVATE);
         String phone = sp.getString("phone", "");
+        String district = sp.getString("district", "");
 
-        // Fetch notifications for this farmer
-        Cursor cursor = db.rawQuery("SELECT * FROM notifications WHERE user_phone = ? AND type = 'Farmer' ORDER BY id DESC", new String[]{phone});
+        if (district.isEmpty()) {
+            // If district is missing from session, try to fetch it from DB
+            try {
+                Cursor c = db.rawQuery("SELECT district FROM users WHERE phone = ?", new String[]{phone});
+                if (c.moveToFirst()) {
+                    district = c.getString(0);
+                    // Update session for next time
+                    sp.edit().putString("district", district).apply();
+                }
+                c.close();
+            } catch (Exception ignored) {}
+        }
+
+        // Only farmers in the targeted district (or those directly messaged) will see the notification
+        String districtTarget = "DISTRICT:" + district;
+        String query = "SELECT * FROM notifications WHERE user_phone = ? OR user_phone = ? ORDER BY id DESC";
+        
+        Cursor cursor = db.rawQuery(query, new String[]{phone, districtTarget});
 
         if (cursor.moveToFirst()) {
             do {
                 String title = cursor.getString(cursor.getColumnIndexOrThrow("title"));
                 String message = cursor.getString(cursor.getColumnIndexOrThrow("message"));
                 String date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
+                String type = cursor.getString(cursor.getColumnIndexOrThrow("type"));
                 
-                // For now, put all in "Today" for simplicity, or you could parse the date
+                int icon = android.R.drawable.ic_dialog_info;
+                String color = "#1E88E5"; // Default Blue
+                
+                if ("ALERT".equals(type)) {
+                    icon = android.R.drawable.stat_sys_warning;
+                    color = "#D32F2F"; // Alert Red
+                }
+
                 todayList.add(new NotificationItem(
                         title,
                         message + " · " + date,
-                        android.R.drawable.stat_sys_warning,
-                        "#1E88E5"
+                        icon,
+                        color
                 ));
             } while (cursor.moveToNext());
         }
