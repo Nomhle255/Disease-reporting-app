@@ -12,6 +12,7 @@ import androidx.core.app.NotificationCompat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Random;
 
 public class NotificationHelper {
 
@@ -26,27 +27,39 @@ public class NotificationHelper {
         NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_DEFAULT);
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription("Notifications for disease outbreaks and vet responses");
             notificationManager.createNotificationChannel(channel);
         }
 
         Intent intent = new Intent(context, targetActivity);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent pendingIntent = PendingIntent.getActivity(context, new Random().nextInt(1000), intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.ic_dialog_info)
                 .setContentTitle(title)
                 .setContentText(message)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setDefaults(NotificationCompat.DEFAULT_ALL)
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true);
 
         notificationManager.notify((int) System.currentTimeMillis(), builder.build());
     }
 
-    private static void saveNotificationToDb(Context context, String title, String message, String userPhone, String type) {
+    public static void saveNotificationToDb(Context context, String title, String message, String userPhone, String type) {
         SQLiteDatabase db = context.openOrCreateDatabase("DiseaseAlertDB", Context.MODE_PRIVATE, null);
+        
+        // Ensure table exists
+        db.execSQL("CREATE TABLE IF NOT EXISTS notifications(" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "user_phone VARCHAR, " +
+                "title VARCHAR, " +
+                "message TEXT, " +
+                "date VARCHAR, " +
+                "type VARCHAR);");
+
         String date = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(new Date());
         
         ContentValues cv = new ContentValues();

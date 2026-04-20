@@ -23,8 +23,8 @@ import java.util.Calendar;
 
 public class HomeFragment extends Fragment {
 
-    private TextView tvGreeting, tvUserName, tvTotalReports, tvPendingReports, tvResolvedReports, tvNoReports;
-    private LinearLayout layoutRecentReports;
+    private TextView tvGreeting, tvUserName, tvTotalReports, tvPendingReports, tvResolvedReports, tvNoReports, tvAlertsHeader;
+    private LinearLayout layoutRecentReports, layoutActiveAlerts;
     private SQLiteDatabase db;
 
     @Nullable
@@ -38,7 +38,9 @@ public class HomeFragment extends Fragment {
         tvPendingReports = view.findViewById(R.id.tv_pending_reports);
         tvResolvedReports = view.findViewById(R.id.tv_resolved_reports);
         tvNoReports = view.findViewById(R.id.tv_no_reports);
+        tvAlertsHeader = view.findViewById(R.id.tv_alerts_header);
         layoutRecentReports = view.findViewById(R.id.layout_recent_reports);
+        layoutActiveAlerts = view.findViewById(R.id.layout_active_alerts);
 
         updateGreeting();
         loadUserData();
@@ -65,6 +67,7 @@ public class HomeFragment extends Fragment {
         SharedPreferences prefs = getActivity().getSharedPreferences("UserSession", Context.MODE_PRIVATE);
         String userName = prefs.getString("name", "Farmer");
         String phone = prefs.getString("phone", "");
+        String district = prefs.getString("district", "");
 
         tvUserName.setText(userName);
 
@@ -86,8 +89,51 @@ public class HomeFragment extends Fragment {
             if (cResolved.moveToFirst()) tvResolvedReports.setText(String.valueOf(cResolved.getInt(0)));
             cResolved.close();
 
+            loadActiveAlerts(phone, district);
             loadRecentReports(phone);
         }
+    }
+
+    private void loadActiveAlerts(String phone, String district) {
+        layoutActiveAlerts.removeAllViews();
+        
+        String districtTarget = "DISTRICT:" + district;
+        // Load recent alerts (last 48 hours or just latest 3)
+        Cursor cursor = db.rawQuery("SELECT * FROM notifications WHERE (user_phone = ? OR user_phone = ?) AND type = 'ALERT' ORDER BY id DESC LIMIT 2", 
+                new String[]{phone, districtTarget});
+
+        if (cursor.getCount() > 0) {
+            tvAlertsHeader.setVisibility(View.VISIBLE);
+            layoutActiveAlerts.setVisibility(View.VISIBLE);
+            while (cursor.moveToNext()) {
+                String title = cursor.getString(cursor.getColumnIndexOrThrow("title"));
+                String message = cursor.getString(cursor.getColumnIndexOrThrow("message"));
+                String date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
+                
+                addAlertItem(title, message, date);
+            }
+        } else {
+            tvAlertsHeader.setVisibility(View.GONE);
+            layoutActiveAlerts.setVisibility(View.GONE);
+        }
+        cursor.close();
+    }
+
+    private void addAlertItem(String title, String message, String date) {
+        View alertView = LayoutInflater.from(getContext()).inflate(R.layout.item_notification, layoutActiveAlerts, false);
+        
+        TextView tvTitle = alertView.findViewById(R.id.tv_notification_title);
+        TextView tvMessage = alertView.findViewById(R.id.tv_notification_message);
+        ImageView ivIcon = alertView.findViewById(R.id.iv_notification_icon);
+        View dot = alertView.findViewById(R.id.view_status_dot);
+
+        tvTitle.setText(title);
+        tvMessage.setText(message + " — " + date);
+        ivIcon.setImageResource(android.R.drawable.stat_sys_warning);
+        ivIcon.setColorFilter(ContextCompat.getColor(getContext(), R.color.tag_urgent_text));
+        dot.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#D32F2F")));
+
+        layoutActiveAlerts.addView(alertView);
     }
 
     private void loadRecentReports(String phone) {
