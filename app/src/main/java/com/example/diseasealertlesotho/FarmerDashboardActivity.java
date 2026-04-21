@@ -46,8 +46,8 @@ public class FarmerDashboardActivity extends AppCompatActivity {
             loadFragment(new ProfileFragment(), "PROFILE");
             updateNavUI("PROFILE");
         } else {
-            // Load Home Fragment by default
-            loadFragment(new HomeFragment(), "HOME");
+            // Load Farmer Home Fragment by default
+            loadFragment(new FarmerHomeFragment(), "HOME");
             updateNavUI("HOME");
         }
     }
@@ -71,7 +71,7 @@ public class FarmerDashboardActivity extends AppCompatActivity {
 
     private void setupNavigation() {
         layoutHome.setOnClickListener(v -> {
-            loadFragment(new HomeFragment(), "HOME");
+            loadFragment(new FarmerHomeFragment(), "HOME");
             updateNavUI("HOME");
         });
 

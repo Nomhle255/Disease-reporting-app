@@ -20,15 +20,19 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.graphics.Insets;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class FarmerNotificationsActivity extends AppCompatActivity {
 
-    private ListView lvToday, lvYesterday;
-    private NotificationAdapter adapterToday, adapterYesterday;
+    private ListView lvToday, lvPrevious;
+    private NotificationAdapter adapterToday, adapterPrevious;
     private List<NotificationItem> todayList = new ArrayList<>();
-    private List<NotificationItem> yesterdayList = new ArrayList<>();
+    private List<NotificationItem> previousList = new ArrayList<>();
+    private TextView tvNoTodayAlerts, tvNoPreviousAlerts;
     private SQLiteDatabase db;
 
     @Override
@@ -55,37 +59,38 @@ public class FarmerNotificationsActivity extends AppCompatActivity {
 
     private void initViews() {
         lvToday = findViewById(R.id.lv_notifications_today);
-        lvYesterday = findViewById(R.id.lv_notifications_yesterday);
+        lvPrevious = findViewById(R.id.lv_notifications_previous);
+        tvNoTodayAlerts = findViewById(R.id.tv_no_today_alerts);
+        tvNoPreviousAlerts = findViewById(R.id.tv_no_previous_alerts);
 
         adapterToday = new NotificationAdapter(this, todayList);
-        adapterYesterday = new NotificationAdapter(this, yesterdayList);
+        adapterPrevious = new NotificationAdapter(this, previousList);
 
         lvToday.setAdapter(adapterToday);
-        lvYesterday.setAdapter(adapterYesterday);
+        lvPrevious.setAdapter(adapterPrevious);
     }
 
     private void loadNotificationsFromDb() {
         todayList.clear();
-        yesterdayList.clear();
+        previousList.clear();
 
         SharedPreferences sp = getSharedPreferences("UserSession", MODE_PRIVATE);
         String phone = sp.getString("phone", "");
         String district = sp.getString("district", "");
 
         if (district.isEmpty()) {
-            // If district is missing from session, try to fetch it from DB
             try {
                 Cursor c = db.rawQuery("SELECT district FROM users WHERE phone = ?", new String[]{phone});
                 if (c.moveToFirst()) {
                     district = c.getString(0);
-                    // Update session for next time
                     sp.edit().putString("district", district).apply();
                 }
                 c.close();
             } catch (Exception ignored) {}
         }
 
-        // Only farmers in the targeted district (or those directly messaged) will see the notification
+        String todayDate = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(new Date());
+
         String districtTarget = "DISTRICT:" + district;
         String query = "SELECT * FROM notifications WHERE user_phone = ? OR user_phone = ? ORDER BY id DESC";
         
@@ -95,32 +100,51 @@ public class FarmerNotificationsActivity extends AppCompatActivity {
             do {
                 String title = cursor.getString(cursor.getColumnIndexOrThrow("title"));
                 String message = cursor.getString(cursor.getColumnIndexOrThrow("message"));
-                String date = cursor.getString(cursor.getColumnIndexOrThrow("date"));
+                String dateTime = cursor.getString(cursor.getColumnIndexOrThrow("date")); // Format: dd/MM/yyyy HH:mm
                 String type = cursor.getString(cursor.getColumnIndexOrThrow("type"));
                 
                 int icon = android.R.drawable.ic_dialog_info;
-                String color = "#1E88E5"; // Default Blue
+                String color = "#1E88E5"; 
                 
                 if ("ALERT".equals(type)) {
                     icon = android.R.drawable.stat_sys_warning;
-                    color = "#D32F2F"; // Alert Red
+                    color = "#D32F2F"; 
                 }
 
-                todayList.add(new NotificationItem(
-                        title,
-                        message + " · " + date,
-                        icon,
-                        color
-                ));
+                NotificationItem item = new NotificationItem(title, message + " · " + dateTime, icon, color);
+
+                if (dateTime != null && dateTime.startsWith(todayDate)) {
+                    todayList.add(item);
+                } else {
+                    previousList.add(item);
+                }
             } while (cursor.moveToNext());
         }
         cursor.close();
 
         adapterToday.notifyDataSetChanged();
-        adapterYesterday.notifyDataSetChanged();
+        adapterPrevious.notifyDataSetChanged();
         
+        // Handle Today section visibility
+        if (todayList.isEmpty()) {
+            tvNoTodayAlerts.setVisibility(View.VISIBLE);
+            lvToday.setVisibility(View.GONE);
+        } else {
+            tvNoTodayAlerts.setVisibility(View.GONE);
+            lvToday.setVisibility(View.VISIBLE);
+        }
+
+        // Handle Previous section visibility
+        if (previousList.isEmpty()) {
+            tvNoPreviousAlerts.setVisibility(View.VISIBLE);
+            lvPrevious.setVisibility(View.GONE);
+        } else {
+            tvNoPreviousAlerts.setVisibility(View.GONE);
+            lvPrevious.setVisibility(View.VISIBLE);
+        }
+
         setListViewHeightBasedOnChildren(lvToday);
-        setListViewHeightBasedOnChildren(lvYesterday);
+        setListViewHeightBasedOnChildren(lvPrevious);
     }
 
     private void setupNavigation() {

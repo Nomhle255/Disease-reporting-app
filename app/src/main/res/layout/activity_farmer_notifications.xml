@@ -39,7 +39,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tv_notifications_title" />
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
@@ -53,6 +53,7 @@
 
             <!-- Today Section -->
             <TextView
+                android:id="@+id/tv_today_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="24dp"
@@ -63,6 +64,19 @@
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
+            <TextView
+                android:id="@+id/tv_no_today_alerts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginTop="8dp"
+                android:background="@android:color/white"
+                android:padding="16dp"
+                android:text="No alerts received today"
+                android:textColor="#757575"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
             <ListView
                 android:id="@+id/lv_notifications_today"
                 android:layout_width="match_parent"
@@ -71,21 +85,34 @@
                 android:dividerHeight="1dp"
                 android:scrollbars="none" />
 
-            <!-- Yesterday Section -->
+            <!-- Previous Section -->
             <TextView
-                android:id="@+id/tv_yesterday_label"
+                android:id="@+id/tv_previous_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="24dp"
                 android:layout_marginTop="24dp"
                 android:layout_marginBottom="8dp"
-                android:text="Yesterday"
+                android:text="Previous"
                 android:textColor="#1B5E20"
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
+            <TextView
+                android:id="@+id/tv_no_previous_alerts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="24dp"
+                android:layout_marginTop="8dp"
+                android:background="@android:color/white"
+                android:padding="16dp"
+                android:text="No previous alerts received"
+                android:textColor="#757575"
+                android:textSize="14sp"
+                android:visibility="gone" />
+
             <ListView
-                android:id="@+id/lv_notifications_yesterday"
+                android:id="@+id/lv_notifications_previous"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:divider="#EEEEEE"
@@ -93,7 +120,7 @@
                 android:scrollbars="none" />
 
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
     <!-- Bottom Navigation -->
     <LinearLayout
