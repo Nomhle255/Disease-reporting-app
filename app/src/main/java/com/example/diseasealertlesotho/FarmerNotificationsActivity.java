@@ -92,7 +92,8 @@ public class FarmerNotificationsActivity extends AppCompatActivity {
         String todayDate = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(new Date());
 
         String districtTarget = "DISTRICT:" + district;
-        String query = "SELECT * FROM notifications WHERE user_phone = ? OR user_phone = ? ORDER BY id DESC";
+        // Only load notifications of type 'ALERT'
+        String query = "SELECT * FROM notifications WHERE (user_phone = ? OR user_phone = ?) AND type = 'ALERT' ORDER BY id DESC";
         
         Cursor cursor = db.rawQuery(query, new String[]{phone, districtTarget});
 
@@ -100,7 +101,7 @@ public class FarmerNotificationsActivity extends AppCompatActivity {
             do {
                 String title = cursor.getString(cursor.getColumnIndexOrThrow("title"));
                 String message = cursor.getString(cursor.getColumnIndexOrThrow("message"));
-                String dateTime = cursor.getString(cursor.getColumnIndexOrThrow("date")); // Format: dd/MM/yyyy HH:mm
+                String dateTime = cursor.getString(cursor.getColumnIndexOrThrow("date"));
                 String type = cursor.getString(cursor.getColumnIndexOrThrow("type"));
                 
                 int icon = android.R.drawable.ic_dialog_info;

@@ -206,10 +206,21 @@ public class FarmerReportDetailsActivity extends AppCompatActivity {
         try {
             SharedPreferences prefs = getSharedPreferences("UserSession", MODE_PRIVATE);
             String phone = prefs.getString("phone", "");
+            String farmerName = prefs.getString("name", "A Farmer");
             
             db.execSQL("INSERT INTO more_info (report_id, farmer_phone, farmer_message, photo, date_submitted) VALUES (?, ?, ?, ?, datetime('now'))",
                     new Object[]{reportId, phone, reply, newImageByteArray});
             
+            // Notify Veterinary Officers
+            NotificationHelper.showNotification(
+                this,
+                "New message from " + farmerName,
+                "Farmer has replied to report #" + reportId,
+                VetCasesActivity.class,
+                "Vet",
+                "MESSAGE"
+            );
+
             etFarmerReply.setText("");
             ivNewPhotoPreview.setVisibility(View.GONE);
             newImageByteArray = null;

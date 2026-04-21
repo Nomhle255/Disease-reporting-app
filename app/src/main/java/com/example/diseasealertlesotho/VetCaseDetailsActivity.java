@@ -1,5 +1,6 @@
 package com.example.diseasealertlesotho;
 
+import android.app.DatePickerDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
@@ -23,6 +24,9 @@ import android.graphics.Color;
 
 import com.google.android.material.button.MaterialButton;
 
+import java.util.Calendar;
+import java.util.Locale;
+
 public class VetCaseDetailsActivity extends AppCompatActivity {
 
     private TextView tvSubtitle, tvStatusBadge;
@@ -30,7 +34,7 @@ public class VetCaseDetailsActivity extends AppCompatActivity {
     private ImageView ivReportPhoto;
     private LinearLayout layoutConversationContainer, layoutEmptyThread;
     private Spinner spinnerResponseType;
-    private EditText etResponseMessage;
+    private EditText etResponseMessage, etVisitDate;
     private MaterialButton btnSendResponse;
 
     private SQLiteDatabase db;
@@ -77,6 +81,7 @@ public class VetCaseDetailsActivity extends AppCompatActivity {
         layoutEmptyThread           = findViewById(R.id.layout_empty_thread);
 
         spinnerResponseType = findViewById(R.id.spinner_response_type);
+        etVisitDate         = findViewById(R.id.et_visit_date);
         etResponseMessage   = findViewById(R.id.et_response_message);
         btnSendResponse     = findViewById(R.id.btn_send_response);
 
@@ -95,18 +100,24 @@ public class VetCaseDetailsActivity extends AppCompatActivity {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 selectedResponseType = responseTypes[position];
-                updateHintForResponseType();
+                updateUIForResponseType();
             }
             @Override
             public void onNothingSelected(AdapterView<?> parent) {}
         });
     }
 
-    private void updateHintForResponseType() {
-        switch (selectedResponseType) {
-            case TYPE_MORE_INFO: etResponseMessage.setHint("Type the question for the farmer..."); break;
-            case TYPE_ADVICE:    etResponseMessage.setHint("Type your advice/treatment..."); break;
-            case TYPE_VISIT:     etResponseMessage.setHint("Provide visit details..."); break;
+    private void updateUIForResponseType() {
+        if (TYPE_VISIT.equals(selectedResponseType)) {
+            etVisitDate.setVisibility(View.VISIBLE);
+            etResponseMessage.setHint("Provide visit details (e.g. arrival time)...");
+        } else {
+            etVisitDate.setVisibility(View.GONE);
+            if (TYPE_MORE_INFO.equals(selectedResponseType)) {
+                etResponseMessage.setHint("Type the question for the farmer...");
+            } else {
+                etResponseMessage.setHint("Type your advice/treatment...");
+            }
         }
     }
 
@@ -222,17 +233,54 @@ public class VetCaseDetailsActivity extends AppCompatActivity {
     }
 
     private void setupClickListeners() {
+        etVisitDate.setOnClickListener(v -> showDatePicker());
+
         btnSendResponse.setOnClickListener(v -> {
             String message = etResponseMessage.getText().toString().trim();
             if (message.isEmpty()) return;
 
+            if (TYPE_VISIT.equals(selectedResponseType)) {
+                String visitDate = etVisitDate.getText().toString().trim();
+                if (visitDate.isEmpty()) {
+                    Toast.makeText(this, "Please select a visit date", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                message = "[SCHEDULED VISIT: " + visitDate + "] " + message;
+            }
+
             String newStatus = resolveStatus(selectedResponseType);
             saveResponse(reportId, farmerPhone, message, selectedResponseType, newStatus);
+            
+            // Trigger notification to farmer
+            NotificationHelper.showNotification(
+                this,
+                "New Vet Response",
+                "A veterinary officer has responded to your report regarding " + tvAnimalType.getText().toString(),
+                FarmerNotificationsActivity.class,
+                farmerPhone,
+                "RESPONSE"
+            );
+
             loadConversationThread(reportId);
             etResponseMessage.setText("");
+            etVisitDate.setText("");
             updateStatusBadge(newStatus);
-            Toast.makeText(this, "Response sent.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Response sent and farmer notified.", Toast.LENGTH_SHORT).show();
         });
+    }
+
+    private void showDatePicker() {
+        final Calendar c = Calendar.getInstance();
+        int year = c.get(Calendar.YEAR);
+        int month = c.get(Calendar.MONTH);
+        int day = c.get(Calendar.DAY_OF_MONTH);
+
+        DatePickerDialog dpd = new DatePickerDialog(this, (view, year1, month1, dayOfMonth) -> {
+            String date = String.format(Locale.getDefault(), "%02d/%02d/%d", dayOfMonth, month1 + 1, year1);
+            etVisitDate.setText(date);
+        }, year, month, day);
+        dpd.getDatePicker().setMinDate(System.currentTimeMillis() - 1000);
+        dpd.show();
     }
 
     private String resolveStatus(String responseType) {

@@ -377,8 +377,7 @@
                                 android:text="No responses yet"
                                 android:textColor="@color/black"
                                 android:textSize="13sp"
-                                android:textStyle="bold"
-                                android:layout_marginBottom="4dp" />
+                                android:textStyle="bold"                                 android:layout_marginBottom="4dp" />
 
                             <TextView
                                 android:layout_width="wrap_content"
@@ -426,6 +425,21 @@
             android:background="@drawable/bg_spinner"
             android:paddingStart="12dp"
             android:paddingEnd="12dp" />
+
+        <!-- Visit Date Picker Field (Initially Hidden) -->
+        <EditText
+            android:id="@+id/et_visit_date"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:background="@drawable/edit_text_bg"
+            android:drawableEnd="@android:drawable/ic_menu_my_calendar"
+            android:focusable="false"
+            android:hint="Select visit date"
+            android:padding="12dp"
+            android:textColor="@color/black"
+            android:textSize="13sp"
+            android:visibility="gone" />
 
         <EditText
             android:id="@+id/et_response_message"
