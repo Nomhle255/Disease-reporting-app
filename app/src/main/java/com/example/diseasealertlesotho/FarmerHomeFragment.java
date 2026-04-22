@@ -25,7 +25,7 @@ public class FarmerHomeFragment extends Fragment {
 
     private TextView tvGreeting, tvUserName, tvTotalReports, tvPendingReports, tvResolvedReports, tvNoReports;
     private LinearLayout layoutRecentReports;
-    private SQLiteDatabase db;
+    private DatabaseHelper dbHelper;
 
     @Nullable
     @Override
@@ -39,6 +39,8 @@ public class FarmerHomeFragment extends Fragment {
         tvResolvedReports = view.findViewById(R.id.tv_resolved_reports);
         tvNoReports = view.findViewById(R.id.tv_no_reports);
         layoutRecentReports = view.findViewById(R.id.layout_recent_reports);
+
+        dbHelper = new DatabaseHelper(requireContext());
 
         updateGreeting();
         loadUserData();
@@ -69,7 +71,7 @@ public class FarmerHomeFragment extends Fragment {
         tvUserName.setText(userName);
 
         if (!phone.isEmpty()) {
-            db = getActivity().openOrCreateDatabase("DiseaseAlertDB", Context.MODE_PRIVATE, null);
+            SQLiteDatabase db = dbHelper.getReadableDatabase();
             
             // Total Reports
             Cursor cTotal = db.rawQuery("SELECT COUNT(*) FROM reports WHERE user_phone = ?", new String[]{phone});
@@ -92,8 +94,9 @@ public class FarmerHomeFragment extends Fragment {
 
     private void loadRecentReports(String phone) {
         layoutRecentReports.removeAllViews();
-        layoutRecentReports.addView(tvNoReports); // Add it back as we'll hide it if data exists
+        layoutRecentReports.addView(tvNoReports); 
 
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
         Cursor cursor = db.rawQuery("SELECT * FROM reports WHERE user_phone = ? ORDER BY id DESC LIMIT 3", new String[]{phone});
         
         if (cursor.getCount() > 0) {
@@ -126,10 +129,8 @@ public class FarmerHomeFragment extends Fragment {
         tvMeta.setText(date);
         tvStatus.setText(status);
         
-        // Hide elements not usually needed in a "mini" dashboard view
         tvFooter.setVisibility(View.GONE);
 
-        // Set photo
         if (photo != null && photo.length > 0) {
             Bitmap bitmap = BitmapFactory.decodeByteArray(photo, 0, photo.length);
             ivPhoto.setImageBitmap(bitmap);
@@ -137,7 +138,6 @@ public class FarmerHomeFragment extends Fragment {
             ivPhoto.setImageResource(android.R.drawable.ic_menu_gallery);
         }
 
-        // Styling status badge
         if (status.equalsIgnoreCase("Pending")) {
             tvStatus.setBackgroundTintList(ContextCompat.getColorStateList(getContext(), R.color.tag_pending_bg));
             tvStatus.setTextColor(ContextCompat.getColor(getContext(), R.color.tag_pending_text));

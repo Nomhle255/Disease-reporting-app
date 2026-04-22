@@ -10,6 +10,9 @@ import android.content.pm.PackageManager;
 import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -17,16 +20,19 @@ import android.provider.MediaStore;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
-import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -44,10 +50,14 @@ public class ReportDiseaseActivity extends AppCompatActivity {
     ImageView btnBack, ivPreview;
     EditText etDate, etAnimalCount, etSymptoms;
     AutoCompleteTextView actAnimalType;
-    MaterialButton btnSubmit;
+    MaterialButton btnSubmit, btnCaptureGps;
     LinearLayout btnUploadPhoto, layoutUploadPlaceholder;
-    SQLiteDatabase db;
+    TextView tvGpsLocation;
+    ProgressBar pbGpsLoading;
+
+    DatabaseHelper dbHelper;
     byte[] imageByteArray = null;
+    String gpsLocation = "Unknown";
 
     private final ActivityResultLauncher<Intent> imagePickerLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
@@ -85,18 +95,16 @@ public class ReportDiseaseActivity extends AppCompatActivity {
             });
         }
 
-        db = openOrCreateDatabase("DiseaseAlertDB", Context.MODE_PRIVATE, null);
+        dbHelper = new DatabaseHelper(this);
 
         initViews();
         setupAnimalTypeDropdown();
 
         btnBack.setOnClickListener(v -> finish());
-
         etDate.setOnClickListener(v -> showDatePickerDialog());
-
         btnUploadPhoto.setOnClickListener(v -> checkPermissionAndOpenGallery());
-
         btnSubmit.setOnClickListener(v -> submitReport());
+        btnCaptureGps.setOnClickListener(v -> requestLocation());
     }
 
     private void initViews() {
@@ -109,6 +117,9 @@ public class ReportDiseaseActivity extends AppCompatActivity {
         btnUploadPhoto = findViewById(R.id.btn_upload_photo);
         ivPreview = findViewById(R.id.iv_preview);
         layoutUploadPlaceholder = findViewById(R.id.layout_upload_placeholder);
+        tvGpsLocation = findViewById(R.id.tv_gps_location);
+        pbGpsLoading = findViewById(R.id.pb_gps_loading);
+        btnCaptureGps = findViewById(R.id.btn_capture_gps);
     }
 
     private void setupAnimalTypeDropdown() {
@@ -129,6 +140,48 @@ public class ReportDiseaseActivity extends AppCompatActivity {
                     etDate.setText(selectedDate);
                 }, year, month, day);
         datePickerDialog.show();
+    }
+
+    private void requestLocation() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 103);
+        } else {
+            fetchGPS();
+        }
+    }
+
+    private void fetchGPS() {
+        try {
+            LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+            if (locationManager != null) {
+                pbGpsLoading.setVisibility(View.VISIBLE);
+                btnCaptureGps.setVisibility(View.GONE);
+                tvGpsLocation.setText("Capturing...");
+
+                locationManager.requestSingleUpdate(LocationManager.GPS_PROVIDER, new LocationListener() {
+                    @Override
+                    public void onLocationChanged(@NonNull Location location) {
+                        gpsLocation = location.getLatitude() + ", " + location.getLongitude();
+                        tvGpsLocation.setText(gpsLocation);
+                        pbGpsLoading.setVisibility(View.GONE);
+                        btnCaptureGps.setVisibility(View.VISIBLE);
+                        btnCaptureGps.setText("Recapture");
+                    }
+                    @Override public void onStatusChanged(String provider, int status, Bundle extras) {}
+                    @Override public void onProviderEnabled(@NonNull String provider) {}
+                    @Override public void onProviderDisabled(@NonNull String provider) {
+                        tvGpsLocation.setText("GPS Disabled");
+                        pbGpsLoading.setVisibility(View.GONE);
+                        btnCaptureGps.setVisibility(View.VISIBLE);
+                    }
+                }, null);
+            }
+        } catch (SecurityException e) {
+            e.printStackTrace();
+            tvGpsLocation.setText("Permission Denied");
+            pbGpsLoading.setVisibility(View.GONE);
+            btnCaptureGps.setVisibility(View.VISIBLE);
+        }
     }
 
     private void checkPermissionAndOpenGallery() {
@@ -169,9 +222,15 @@ public class ReportDiseaseActivity extends AppCompatActivity {
             return;
         }
 
+        if (gpsLocation.equals("Unknown") || gpsLocation.equals("Not captured")) {
+            Toast.makeText(this, "Please capture your GPS location", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         SharedPreferences sp = getSharedPreferences("UserSession", MODE_PRIVATE);
         String phone = sp.getString("phone", "Unknown");
 
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
         ContentValues cv = new ContentValues();
         cv.put("user_phone", phone);
         cv.put("animal_type", type);
@@ -179,6 +238,7 @@ public class ReportDiseaseActivity extends AppCompatActivity {
         cv.put("symptoms", symptoms);
         cv.put("date", date);
         cv.put("status", "Pending");
+        cv.put("gps_location", gpsLocation);
         if (imageByteArray != null) {
             cv.put("photo", imageByteArray);
         }
@@ -188,12 +248,11 @@ public class ReportDiseaseActivity extends AppCompatActivity {
         if (id != -1) {
             saveToHistoryFile(type, countStr, symptoms, date);
             
-            // Notify Veterinary Officer
             NotificationHelper.showNotification(
                 this, 
                 "New Report Submitted", 
                 "A new " + type + " disease report has been received.", 
-                AllReportsActivity.class,
+                VetDashboardActivity.class,
                 "Vet", 
                 "Vet"
             );
@@ -216,10 +275,12 @@ public class ReportDiseaseActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == 102 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             openGallery();
+        } else if (requestCode == 103 && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            fetchGPS();
         }
     }
 }

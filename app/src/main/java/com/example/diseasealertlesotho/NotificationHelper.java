@@ -49,16 +49,8 @@ public class NotificationHelper {
     }
 
     public static void saveNotificationToDb(Context context, String title, String message, String userPhone, String type) {
-        SQLiteDatabase db = context.openOrCreateDatabase("DiseaseAlertDB", Context.MODE_PRIVATE, null);
-        
-        // Ensure table exists
-        db.execSQL("CREATE TABLE IF NOT EXISTS notifications(" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                "user_phone VARCHAR, " +
-                "title VARCHAR, " +
-                "message TEXT, " +
-                "date VARCHAR, " +
-                "type VARCHAR);");
+        DatabaseHelper dbHelper = new DatabaseHelper(context);
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
 
         String date = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(new Date());
         

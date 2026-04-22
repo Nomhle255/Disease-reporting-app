@@ -1,6 +1,5 @@
 package com.example.diseasealertlesotho;
 
-import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
@@ -15,83 +14,67 @@ import android.widget.BaseAdapter;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+import androidx.fragment.app.Fragment;
 
 import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class AllReportsActivity extends AppCompatActivity {
+public class ManageReportsFragment extends Fragment {
 
     private ListView listView;
+    private TextView tvEmptyView;
     private ReportAdapter adapter;
     private List<Report> reportList = new ArrayList<>();
     private List<Report> filteredList = new ArrayList<>();
-    private SQLiteDatabase db;
+    private DatabaseHelper dbHelper;
     private String currentFilter = "All";
     
     private MaterialButton btnAll, btnPending, btnInvestigating, btnResolved;
 
+    @Nullable
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_all_reports);
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_manage_reports, container, false);
 
-        View mainView = findViewById(android.R.id.content);
-        if (mainView != null) {
-            ViewCompat.setOnApplyWindowInsetsListener(mainView, (v, insets) -> {
-                Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-                return insets;
-            });
-        }
-
-        initViews();
-        setupDatabase();
+        dbHelper = new DatabaseHelper(requireContext());
+        initViews(view);
         loadReports();
         setupFilters();
-        setupNavigation();
-        updateSummaryStats();
+        updateSummaryStats(view);
 
-        listView.setOnItemClickListener((parent, view, position, id) -> {
+        listView.setOnItemClickListener((parent, v, position, id) -> {
             Report report = filteredList.get(position);
-            Intent intent = new Intent(this, AdminReportDetailsActivity.class);
+            Intent intent = new Intent(getActivity(), AdminReportDetailsActivity.class);
             intent.putExtra("REPORT_ID", report.id);
             startActivity(intent);
         });
 
-        findViewById(R.id.tv_back_dashboard).setOnClickListener(v -> finish());
+        return view;
     }
 
-    private void initViews() {
-        listView = findViewById(R.id.list_reports);
+    private void initViews(View view) {
+        listView = view.findViewById(R.id.list_reports);
+        tvEmptyView = view.findViewById(R.id.tv_empty_view_reports);
         
-        btnAll = findViewById(R.id.btn_filter_all);
-        btnPending = findViewById(R.id.btn_filter_pending);
-        btnInvestigating = findViewById(R.id.btn_filter_investigating);
-        btnResolved = findViewById(R.id.btn_filter_resolved);
+        btnAll = view.findViewById(R.id.btn_filter_all);
+        btnPending = view.findViewById(R.id.btn_filter_pending);
+        btnInvestigating = view.findViewById(R.id.btn_filter_investigating);
+        btnResolved = view.findViewById(R.id.btn_filter_resolved);
         
-        adapter = new ReportAdapter(this, filteredList);
+        adapter = new ReportAdapter(requireContext(), filteredList);
         listView.setAdapter(adapter);
-    }
-
-    private void setupDatabase() {
-        db = openOrCreateDatabase("DiseaseAlertDB", Context.MODE_PRIVATE, null);
     }
 
     private void loadReports() {
         reportList.clear();
         try {
+            SQLiteDatabase db = dbHelper.getReadableDatabase();
             String query = "SELECT r.*, u.firstname, u.lastname FROM reports r " +
                           "LEFT JOIN users u ON r.user_phone = u.phone " +
                           "ORDER BY r.id DESC";
@@ -102,7 +85,6 @@ public class AllReportsActivity extends AppCompatActivity {
                     Report report = new Report();
                     report.id = cursor.getInt(cursor.getColumnIndexOrThrow("id"));
                     report.reportId = "RPT-" + String.format("%03d", report.id);
-                    report.userPhone = cursor.getString(cursor.getColumnIndexOrThrow("user_phone"));
                     
                     String fName = cursor.getString(cursor.getColumnIndexOrThrow("firstname"));
                     String lName = cursor.getString(cursor.getColumnIndexOrThrow("lastname"));
@@ -117,7 +99,6 @@ public class AllReportsActivity extends AppCompatActivity {
                     report.photo = cursor.getBlob(cursor.getColumnIndexOrThrow("photo"));
                     
                     if (report.status == null) report.status = "Pending";
-                    
                     reportList.add(report);
                 } while (cursor.moveToNext());
             }
@@ -128,7 +109,7 @@ public class AllReportsActivity extends AppCompatActivity {
         applyFilters();
     }
 
-    private void updateSummaryStats() {
+    private void updateSummaryStats(View view) {
         int pending = 0, investigating = 0, resolved = 0;
         for (Report r : reportList) {
             if (r.status.equalsIgnoreCase("Pending")) pending++;
@@ -136,25 +117,24 @@ public class AllReportsActivity extends AppCompatActivity {
             else if (r.status.equalsIgnoreCase("Resolved")) resolved++;
         }
 
-        View layoutSummary = findViewById(R.id.layout_summary);
+        View layoutSummary = view.findViewById(R.id.layout_summary);
         if (layoutSummary instanceof ViewGroup) {
             ViewGroup group = (ViewGroup) layoutSummary;
             if (group.getChildCount() >= 4) {
-                // Set all summary numbers to use green color as requested
-                setupSummaryCard(group.getChildAt(0), String.valueOf(reportList.size()), "Total", R.color.header_green);
-                setupSummaryCard(group.getChildAt(1), String.valueOf(pending), "Pending", R.color.header_green);
-                setupSummaryCard(group.getChildAt(2), String.valueOf(investigating), "Active", R.color.header_green);
-                setupSummaryCard(group.getChildAt(3), String.valueOf(resolved), "Resolved", R.color.header_green);
+                setupSummaryCard(group.getChildAt(0), String.valueOf(reportList.size()), "Total");
+                setupSummaryCard(group.getChildAt(1), String.valueOf(pending), "Pending");
+                setupSummaryCard(group.getChildAt(2), String.valueOf(investigating), "Active");
+                setupSummaryCard(group.getChildAt(3), String.valueOf(resolved), "Resolved");
             }
         }
     }
 
-    private void setupSummaryCard(View card, String count, String label, int colorRes) {
+    private void setupSummaryCard(View card, String count, String label) {
         if (card == null) return;
         TextView tvCount = card.findViewById(R.id.tv_summary_count);
         TextView tvLabel = card.findViewById(R.id.tv_summary_label);
         tvCount.setText(count);
-        tvCount.setTextColor(ContextCompat.getColor(this, colorRes));
+        tvCount.setTextColor(ContextCompat.getColor(requireContext(), R.color.header_green));
         tvLabel.setText(label);
     }
 
@@ -183,53 +163,38 @@ public class AllReportsActivity extends AppCompatActivity {
         else if (currentFilter.equalsIgnoreCase("Investigating")) selected = btnInvestigating;
         else if (currentFilter.equalsIgnoreCase("Resolved")) selected = btnResolved;
 
-        selected.setBackgroundTintList(ContextCompat.getColorStateList(this, R.color.header_green));
-        selected.setTextColor(ContextCompat.getColor(this, R.color.white));
+        selected.setBackgroundTintList(ContextCompat.getColorStateList(requireContext(), R.color.header_green));
+        selected.setTextColor(ContextCompat.getColor(requireContext(), R.color.white));
     }
 
     private void resetButtonStyle(MaterialButton btn) {
-        btn.setBackgroundTintList(ContextCompat.getColorStateList(this, android.R.color.transparent));
-        btn.setTextColor(ContextCompat.getColor(this, R.color.black));
-        btn.setStrokeColor(ContextCompat.getColorStateList(this, R.color.border_color));
+        btn.setBackgroundTintList(ContextCompat.getColorStateList(requireContext(), android.R.color.transparent));
+        btn.setTextColor(ContextCompat.getColor(requireContext(), R.color.black));
+        btn.setStrokeColor(ContextCompat.getColorStateList(requireContext(), R.color.border_color));
     }
 
     private void applyFilters() {
         filteredList.clear();
         for (Report report : reportList) {
-            boolean matchesFilter = currentFilter.equals("All") || report.status.equalsIgnoreCase(currentFilter);
-            if (matchesFilter) {
+            if (currentFilter.equals("All") || report.status.equalsIgnoreCase(currentFilter)) {
                 filteredList.add(report);
             }
         }
+
+        if (filteredList.isEmpty()) {
+            tvEmptyView.setVisibility(View.VISIBLE);
+            listView.setVisibility(View.GONE);
+        } else {
+            tvEmptyView.setVisibility(View.GONE);
+            listView.setVisibility(View.VISIBLE);
+        }
+
         adapter.notifyDataSetChanged();
-    }
-
-    private void setupNavigation() {
-        View bottomNav = findViewById(R.id.bottom_navigation);
-        bottomNav.findViewById(R.id.layout_home_tab).setOnClickListener(v -> finish());
-        bottomNav.findViewById(R.id.layout_users_tab).setOnClickListener(v -> {
-            startActivity(new Intent(this, ManageUsersActivity.class));
-            finish();
-        });
-        bottomNav.findViewById(R.id.layout_stats_tab).setOnClickListener(v -> {
-            startActivity(new Intent(this, StatisticsActivity.class));
-            finish();
-        });
-        bottomNav.findViewById(R.id.layout_profile_tab).setOnClickListener(v -> {
-            Intent intent = new Intent(this, AdminDashboardActivity.class);
-            intent.putExtra("OPEN_FRAGMENT", "PROFILE");
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-            startActivity(intent);
-            finish();
-        });
-
-        ((ImageView)bottomNav.findViewById(R.id.iv_reports_icon)).setColorFilter(ContextCompat.getColor(this, R.color.header_green));
-        ((TextView)bottomNav.findViewById(R.id.tv_reports_text)).setTextColor(ContextCompat.getColor(this, R.color.header_green));
     }
 
     static class Report {
         int id;
-        String reportId, farmerName, animalType, district, symptoms, date, status, userPhone;
+        String reportId, farmerName, animalType, district, symptoms, date, status;
         int animalCount;
         byte[] photo;
     }
@@ -248,18 +213,12 @@ public class AllReportsActivity extends AppCompatActivity {
                 convertView = LayoutInflater.from(context).inflate(R.layout.report_item, parent, false);
             }
             Report report = items.get(position);
-            TextView tvId = convertView.findViewById(R.id.tv_report_id);
-            TextView tvDate = convertView.findViewById(R.id.tv_report_date);
-            TextView tvFarmerAnimal = convertView.findViewById(R.id.tv_farmer_animal);
-            TextView tvDetails = convertView.findViewById(R.id.tv_location_details);
-            TextView tvStatus = convertView.findViewById(R.id.tv_status_tag);
-            ImageView ivPhoto = convertView.findViewById(R.id.iv_report_photo);
-
-            tvId.setText(report.reportId);
-            tvDate.setText(report.date);
-            tvFarmerAnimal.setText(report.farmerName + " — " + report.animalType);
-            tvDetails.setText(report.district + " · " + report.animalCount + " animals · " + report.symptoms);
+            ((TextView)convertView.findViewById(R.id.tv_report_id)).setText(report.reportId);
+            ((TextView)convertView.findViewById(R.id.tv_report_date)).setText(report.date);
+            ((TextView)convertView.findViewById(R.id.tv_farmer_animal)).setText(report.farmerName + " — " + report.animalType);
+            ((TextView)convertView.findViewById(R.id.tv_location_details)).setText(report.district + " · " + report.animalCount + " animals · " + report.symptoms);
             
+            ImageView ivPhoto = convertView.findViewById(R.id.iv_report_photo);
             if (report.photo != null && report.photo.length > 0) {
                 Bitmap bitmap = BitmapFactory.decodeByteArray(report.photo, 0, report.photo.length);
                 ivPhoto.setImageBitmap(bitmap);
@@ -267,6 +226,7 @@ public class AllReportsActivity extends AppCompatActivity {
                 ivPhoto.setImageResource(android.R.drawable.ic_menu_gallery);
             }
 
+            TextView tvStatus = convertView.findViewById(R.id.tv_status_tag);
             tvStatus.setText(report.status);
             if (report.status.equalsIgnoreCase("Pending")) {
                 tvStatus.setBackgroundResource(R.drawable.tag_bg_pending);
@@ -280,5 +240,11 @@ public class AllReportsActivity extends AppCompatActivity {
             }
             return convertView;
         }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        loadReports();
     }
 }

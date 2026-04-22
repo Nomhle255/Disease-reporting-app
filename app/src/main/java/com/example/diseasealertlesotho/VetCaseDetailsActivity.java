@@ -37,7 +37,7 @@ public class VetCaseDetailsActivity extends AppCompatActivity {
     private EditText etResponseMessage, etVisitDate;
     private MaterialButton btnSendResponse;
 
-    private SQLiteDatabase db;
+    private DatabaseHelper dbHelper;
     private String farmerPhone = "";
     private String farmerName = "Farmer";
     private int reportId = -1;
@@ -59,7 +59,7 @@ public class VetCaseDetailsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_vet_case_details);
 
-        db = openOrCreateDatabase("DiseaseAlertDB", Context.MODE_PRIVATE, null);
+        dbHelper = new DatabaseHelper(this);
 
         initViews();
         setupSpinner();
@@ -136,6 +136,7 @@ public class VetCaseDetailsActivity extends AppCompatActivity {
 
     private void loadReportFromDB(int id) {
         try {
+            SQLiteDatabase db = dbHelper.getReadableDatabase();
             String query = "SELECT r.*, u.firstname, u.lastname FROM reports r " +
                     "LEFT JOIN users u ON r.user_phone = u.phone " +
                     "WHERE r.id = ?";
@@ -149,6 +150,7 @@ public class VetCaseDetailsActivity extends AppCompatActivity {
                 String symptoms = cursor.getString(cursor.getColumnIndexOrThrow("symptoms"));
                 String date     = cursor.getString(cursor.getColumnIndexOrThrow("date"));
                 String status   = cursor.getString(cursor.getColumnIndexOrThrow("status"));
+                String gps      = cursor.getString(cursor.getColumnIndexOrThrow("gps_location"));
                 farmerPhone     = cursor.getString(cursor.getColumnIndexOrThrow("user_phone"));
                 byte[] photo    = cursor.getBlob(cursor.getColumnIndexOrThrow("photo"));
 
@@ -159,7 +161,7 @@ public class VetCaseDetailsActivity extends AppCompatActivity {
                 tvAffectedCount.setText(count + " animals");
                 tvDateObserved.setText(date != null ? date : "—");
                 tvSymptoms.setText((symptoms != null && !symptoms.isEmpty()) ? symptoms : "No description.");
-                tvGpsLocation.setText("Location not captured");
+                tvGpsLocation.setText((gps != null && !gps.isEmpty()) ? gps : "Location not captured");
 
                 if (photo != null && photo.length > 0) {
                     Bitmap bitmap = BitmapFactory.decodeByteArray(photo, 0, photo.length);
@@ -177,6 +179,7 @@ public class VetCaseDetailsActivity extends AppCompatActivity {
     private void loadConversationThread(int id) {
         layoutConversationContainer.removeAllViews();
         try {
+            SQLiteDatabase db = dbHelper.getReadableDatabase();
             String query =
                 "SELECT 'vet' AS sender, response_type, message, NULL AS photo, date_responded AS msg_date " +
                 "FROM responses WHERE report_id = ? " +
@@ -256,7 +259,7 @@ public class VetCaseDetailsActivity extends AppCompatActivity {
                 this,
                 "New Vet Response",
                 "A veterinary officer has responded to your report regarding " + tvAnimalType.getText().toString(),
-                FarmerNotificationsActivity.class,
+                FarmerDashboardActivity.class,
                 farmerPhone,
                 "RESPONSE"
             );
@@ -294,6 +297,7 @@ public class VetCaseDetailsActivity extends AppCompatActivity {
 
     private void saveResponse(int rId, String fPhone, String message, String responseType, String newStatus) {
         try {
+            SQLiteDatabase db = dbHelper.getWritableDatabase();
             SharedPreferences prefs = getSharedPreferences("UserSession", MODE_PRIVATE);
             String vetPhone = prefs.getString("phone", "");
             db.execSQL("INSERT INTO responses (report_id, vet_phone, farmer_phone, response_type, message, status_changed_to, date_responded) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))",
@@ -332,11 +336,5 @@ public class VetCaseDetailsActivity extends AppCompatActivity {
                 tvStatusBadge.setTextColor(Color.parseColor("#757575"));
                 break;
         }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (db != null && db.isOpen()) db.close();
     }
 }

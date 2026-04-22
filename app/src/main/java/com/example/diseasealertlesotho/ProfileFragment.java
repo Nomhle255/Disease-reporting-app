@@ -10,7 +10,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -20,7 +19,7 @@ import com.google.android.material.button.MaterialButton;
 
 public class ProfileFragment extends Fragment {
 
-    private TextView tvName, tvRoleDistrict, tvPhone, tvEmail, tvVillage, tvDistrict, tvInitials;
+    private TextView tvName, tvRoleDistrict, tvPhone, tvEmail, tvDistrict, tvInitials;
     private MaterialButton btnEditProfile, btnLogout;
     private SQLiteDatabase db;
 
@@ -60,7 +59,6 @@ public class ProfileFragment extends Fragment {
         tvRoleDistrict = view.findViewById(R.id.tv_profile_role_district);
         tvPhone = view.findViewById(R.id.tv_profile_phone);
         tvEmail = view.findViewById(R.id.tv_profile_email);
-        tvVillage = view.findViewById(R.id.tv_profile_village);
         tvDistrict = view.findViewById(R.id.tv_profile_district);
         tvInitials = view.findViewById(R.id.tv_profile_initials);
         btnEditProfile = view.findViewById(R.id.btn_edit_profile);
@@ -84,8 +82,6 @@ public class ProfileFragment extends Fragment {
                 String role = cursor.getString(cursor.getColumnIndexOrThrow("role"));
                 String email = cursor.getString(cursor.getColumnIndexOrThrow("email"));
                 
-                String village = "";
-                try { village = cursor.getString(cursor.getColumnIndexOrThrow("village")); } catch (Exception ignored) {}
                 String district = "";
                 try { district = cursor.getString(cursor.getColumnIndexOrThrow("district")); } catch (Exception ignored) {}
 
@@ -93,7 +89,6 @@ public class ProfileFragment extends Fragment {
                 tvName.setText(fullName);
                 tvPhone.setText(phone);
                 tvEmail.setText(email);
-                tvVillage.setText(village != null && !village.isEmpty() ? village : "Not set");
                 tvDistrict.setText(district != null && !district.isEmpty() ? district : "Not set");
                 
                 String roleDistStr = role + (district != null && !district.isEmpty() ? " · " + district + " District" : "");

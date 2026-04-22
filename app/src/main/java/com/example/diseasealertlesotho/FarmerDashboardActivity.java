@@ -44,11 +44,9 @@ public class FarmerDashboardActivity extends AppCompatActivity {
         String openFragment = getIntent().getStringExtra("OPEN_FRAGMENT");
         if ("PROFILE".equals(openFragment)) {
             loadFragment(new ProfileFragment(), "PROFILE");
-            updateNavUI("PROFILE");
         } else {
             // Load Farmer Home Fragment by default
             loadFragment(new FarmerHomeFragment(), "HOME");
-            updateNavUI("HOME");
         }
     }
 
@@ -70,23 +68,13 @@ public class FarmerDashboardActivity extends AppCompatActivity {
     }
 
     private void setupNavigation() {
-        layoutHome.setOnClickListener(v -> {
-            loadFragment(new FarmerHomeFragment(), "HOME");
-            updateNavUI("HOME");
-        });
+        layoutHome.setOnClickListener(v -> loadFragment(new FarmerHomeFragment(), "HOME"));
 
-        layoutReports.setOnClickListener(v -> {
-            startActivity(new Intent(this, FarmerReportHistoryActivity.class));
-        });
+        layoutReports.setOnClickListener(v -> loadFragment(new FarmerReportsFragment(), "REPORTS"));
 
-        layoutAlerts.setOnClickListener(v -> {
-            startActivity(new Intent(this, FarmerNotificationsActivity.class));
-        });
+        layoutAlerts.setOnClickListener(v -> loadFragment(new FarmerDiseaseAlertsFragment(), "ALERTS"));
 
-        layoutProfile.setOnClickListener(v -> {
-            loadFragment(new ProfileFragment(), "PROFILE");
-            updateNavUI("PROFILE");
-        });
+        layoutProfile.setOnClickListener(v -> loadFragment(new ProfileFragment(), "PROFILE"));
 
         findViewById(R.id.btn_report_nav).setOnClickListener(v -> {
             Intent intent = new Intent(this, ReportDiseaseActivity.class);
@@ -98,6 +86,7 @@ public class FarmerDashboardActivity extends AppCompatActivity {
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.fragment_container, fragment, tag);
         transaction.commit();
+        updateNavUI(tag);
     }
 
     private void updateNavUI(String activeTab) {
@@ -121,6 +110,14 @@ public class FarmerDashboardActivity extends AppCompatActivity {
                 ivHome.setColorFilter(green);
                 tvHome.setTextColor(green);
                 break;
+            case "REPORTS":
+                ivReports.setColorFilter(green);
+                tvReports.setTextColor(green);
+                break;
+            case "ALERTS":
+                ivAlerts.setColorFilter(green);
+                tvAlerts.setTextColor(green);
+                break;
             case "PROFILE":
                 ivProfile.setColorFilter(green);
                 tvProfile.setTextColor(green);
@@ -135,7 +132,6 @@ public class FarmerDashboardActivity extends AppCompatActivity {
         String openFragment = intent.getStringExtra("OPEN_FRAGMENT");
         if ("PROFILE".equals(openFragment)) {
             loadFragment(new ProfileFragment(), "PROFILE");
-            updateNavUI("PROFILE");
         }
     }
 }

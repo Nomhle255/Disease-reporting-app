@@ -12,76 +12,65 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import androidx.appcompat.app.AppCompatActivity;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
 
 import com.google.android.material.button.MaterialButton;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class VetCasesActivity extends AppCompatActivity {
+public class VetCasesFragment extends Fragment {
 
     private ListView listView;
-    private EditText etSearch;
     private CaseAdapter adapter;
     private List<CaseReport> caseList = new ArrayList<>();
     private List<CaseReport> filteredList = new ArrayList<>();
-    private SQLiteDatabase db;
+    private DatabaseHelper dbHelper;
     private String currentFilter = "All";
     private TextView tvStatPending, tvStatScheduled, tvStatResolved, tvEmptyState;
     private MaterialButton btnAll, btnPending, btnActive, btnResolved;
 
+    @Nullable
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_vet_cases);
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_vet_cases, container, false);
 
-        initViews();
-        setupDatabase();
-        setupSearch();
+        dbHelper = new DatabaseHelper(requireContext());
+        initViews(view);
         setupFilters();
-        setupNavigation();
-
-        findViewById(R.id.tv_back_dashboard).setOnClickListener(v -> finish());
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
         loadCases();
+
+        return view;
     }
 
-    private void initViews() {
-        listView = findViewById(R.id.list_cases);
-        etSearch = new EditText(this); // Temporary until layout has one
-        tvEmptyState = findViewById(R.id.tv_empty_state);
+    private void initViews(View view) {
+        listView = view.findViewById(R.id.list_cases);
+        tvEmptyState = view.findViewById(R.id.tv_empty_state);
 
-        adapter = new CaseAdapter(this, filteredList);
+        adapter = new CaseAdapter(requireContext(), filteredList);
         listView.setAdapter(adapter);
 
-        tvStatPending = findViewById(R.id.tv_stat_pending);
-        tvStatScheduled = findViewById(R.id.tv_stat_scheduled);
-        tvStatResolved = findViewById(R.id.tv_stat_resolved);
+        tvStatPending = view.findViewById(R.id.tv_stat_pending);
+        tvStatScheduled = view.findViewById(R.id.tv_stat_scheduled);
+        tvStatResolved = view.findViewById(R.id.tv_stat_resolved);
 
-        btnAll = findViewById(R.id.btn_filter_all);
-        btnPending = findViewById(R.id.btn_filter_pending);
-        btnActive = findViewById(R.id.btn_filter_active);
-        btnResolved = findViewById(R.id.btn_filter_resolved);
-    }
-
-    private void setupDatabase() {
-        db = openOrCreateDatabase("DiseaseAlertDB", Context.MODE_PRIVATE, null);
+        btnAll = view.findViewById(R.id.btn_filter_all);
+        btnPending = view.findViewById(R.id.btn_filter_pending);
+        btnActive = view.findViewById(R.id.btn_filter_active);
+        btnResolved = view.findViewById(R.id.btn_filter_resolved);
     }
 
     private void loadCases() {
         caseList.clear();
         try {
+            SQLiteDatabase db = dbHelper.getReadableDatabase();
             String query = "SELECT r.*, u.firstname, u.lastname FROM reports r " +
                           "LEFT JOIN users u ON r.user_phone = u.phone " +
                           "ORDER BY r.id DESC";
@@ -112,7 +101,7 @@ public class VetCasesActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        applyFilters("");
+        applyFilters();
         updateSummaryStats();
         updateFilterUI();
     }
@@ -130,22 +119,17 @@ public class VetCasesActivity extends AppCompatActivity {
         if (tvStatResolved != null) tvStatResolved.setText(String.valueOf(resolved));
     }
 
-    private void setupSearch() {
-        // No et_search in current activity_vet_cases.xml
-    }
-
     private void setupFilters() {
         btnAll.setOnClickListener(v -> updateFilter("All"));
         btnPending.setOnClickListener(v -> updateFilter("Pending"));
-        btnActive.setOnClickListener(v -> updateFilter("Active")); // Internally mapped to "Scheduled"
+        btnActive.setOnClickListener(v -> updateFilter("Active")); 
         btnResolved.setOnClickListener(v -> updateFilter("Resolved"));
     }
 
     private void updateFilter(String filter) {
         currentFilter = filter;
         updateFilterUI();
-        String query = (etSearch != null && etSearch.getText() != null) ? etSearch.getText().toString() : "";
-        applyFilters(query);
+        applyFilters();
     }
 
     private void updateFilterUI() {
@@ -157,34 +141,28 @@ public class VetCasesActivity extends AppCompatActivity {
 
     private void updateButtonStyle(MaterialButton button, boolean isActive) {
         if (isActive) {
-            button.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.header_green)));
-            button.setTextColor(ContextCompat.getColor(this, R.color.white));
+            button.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.header_green)));
+            button.setTextColor(ContextCompat.getColor(requireContext(), R.color.white));
             button.setStrokeWidth(0);
         } else {
-            button.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(this, android.R.color.transparent)));
-            button.setTextColor(ContextCompat.getColor(this, R.color.black));
-            button.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(this, R.color.border_color)));
+            button.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), android.R.color.transparent)));
+            button.setTextColor(ContextCompat.getColor(requireContext(), R.color.black));
+            button.setStrokeColor(ColorStateList.valueOf(ContextCompat.getColor(requireContext(), R.color.border_color)));
             button.setStrokeWidth((int) (1 * getResources().getDisplayMetrics().density));
         }
     }
 
-    private void applyFilters(String query) {
+    private void applyFilters() {
         filteredList.clear();
         for (CaseReport report : caseList) {
             boolean matchesFilter;
             if (currentFilter.equals("Active")) {
-                // Fixed: Only matches "Scheduled" now
                 matchesFilter = report.status.equalsIgnoreCase("Scheduled");
             } else {
                 matchesFilter = currentFilter.equals("All") || report.status.equalsIgnoreCase(currentFilter);
             }
             
-            boolean matchesQuery = query.isEmpty() || 
-                                 report.farmerName.toLowerCase().contains(query.toLowerCase()) || 
-                                 report.animalType.toLowerCase().contains(query.toLowerCase()) ||
-                                 report.symptoms.toLowerCase().contains(query.toLowerCase());
-            
-            if (matchesFilter && matchesQuery) {
+            if (matchesFilter) {
                 filteredList.add(report);
             }
         }
@@ -200,28 +178,9 @@ public class VetCasesActivity extends AppCompatActivity {
         adapter.notifyDataSetChanged();
     }
 
-    private void setupNavigation() {
-        findViewById(R.id.layout_home_tab).setOnClickListener(v -> {
-            startActivity(new Intent(this, VetDashboardActivity.class));
-            finish();
-        });
-        
-        findViewById(R.id.layout_alerts_tab).setOnClickListener(v -> {
-             startActivity(new Intent(this, VetAlertsActivity.class));
-             finish();
-        });
-
-        findViewById(R.id.layout_profile_tab).setOnClickListener(v -> {
-             Intent intent = new Intent(this, VetDashboardActivity.class);
-             intent.putExtra("OPEN_FRAGMENT", "PROFILE");
-             startActivity(intent);
-             finish();
-        });
-    }
-
     static class CaseReport {
         int id;
-        String farmerName, animalType, district, symptoms, date, status;
+        String farmerName, animalType, symptoms, date, status;
         int animalCount;
         byte[] photo;
     }
@@ -259,7 +218,7 @@ public class VetCasesActivity extends AppCompatActivity {
             tvId.setText("RPT-" + String.format("%03d", report.id));
             tvDate.setText(report.date);
             tvFarmerAnimal.setText(report.farmerName + " — " + report.animalType);
-            tvDetails.setText((report.district != null ? report.district : "") + " · " + report.animalCount + " animals · " + report.symptoms);
+            tvDetails.setText(report.animalCount + " animals · " + report.symptoms);
             
             if (report.photo != null && report.photo.length > 0) {
                 Bitmap bitmap = BitmapFactory.decodeByteArray(report.photo, 0, report.photo.length);
@@ -268,11 +227,7 @@ public class VetCasesActivity extends AppCompatActivity {
                 ivPhoto.setImageResource(android.R.drawable.ic_menu_gallery);
             }
 
-            String displayStatus = report.status;
-            if (report.status.equalsIgnoreCase("Investigating")) {
-                displayStatus = "Info Requested";
-            }
-            tvStatus.setText(displayStatus);
+            tvStatus.setText(report.status);
 
             if (report.status.equalsIgnoreCase("Pending")) {
                 tvStatus.setBackgroundResource(R.drawable.tag_bg_pending);
@@ -293,5 +248,11 @@ public class VetCasesActivity extends AppCompatActivity {
 
             return convertView;
         }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        loadCases();
     }
 }

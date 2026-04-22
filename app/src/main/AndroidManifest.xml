@@ -5,6 +5,9 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.CAMERA" />
 
     <application
         android:allowBackup="true"
@@ -36,22 +39,10 @@
             android:name=".VetDashboardActivity"
             android:exported="false" />
         <activity
-            android:name=".VetCasesActivity"
-            android:exported="false" />
-        <activity
             android:name=".VetAlertsActivity"
             android:exported="false" />
         <activity
             android:name=".VetCaseDetailsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ManageUsersActivity"
-            android:exported="false" />
-        <activity
-            android:name=".StatisticsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".AllReportsActivity"
             android:exported="false" />
         <activity
             android:name=".AdminReportDetailsActivity"
@@ -66,13 +57,7 @@
             android:name=".ReportDiseaseActivity"
             android:exported="false" />
         <activity
-            android:name=".FarmerReportHistoryActivity"
-            android:exported="false" />
-        <activity
             android:name=".FarmerReportDetailsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".FarmerNotificationsActivity"
             android:exported="false" />
     </application>
 

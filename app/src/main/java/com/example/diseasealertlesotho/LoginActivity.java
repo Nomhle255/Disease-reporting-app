@@ -1,7 +1,6 @@
 package com.example.diseasealertlesotho;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -13,7 +12,6 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
@@ -32,7 +30,7 @@ public class LoginActivity extends AppCompatActivity {
     MaterialButton btnLogin;
     TextView tvForgotPassword, tvRegister;
 
-    SQLiteDatabase db;
+    DatabaseHelper dbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,11 +47,9 @@ public class LoginActivity extends AppCompatActivity {
             });
         }
 
+        dbHelper = new DatabaseHelper(this);
         requestNotificationPermission();
         initViews();
-
-        db = openOrCreateDatabase("DiseaseAlertDB", Context.MODE_PRIVATE, null);
-        db.execSQL("CREATE TABLE IF NOT EXISTS reports(id INTEGER PRIMARY KEY AUTOINCREMENT, user_phone VARCHAR, animal_type VARCHAR, count INTEGER, symptoms TEXT, date VARCHAR, photo BLOB);");
 
         btnLogin.setOnClickListener(new OnClickListener() {
             @Override
@@ -92,14 +88,16 @@ public class LoginActivity extends AppCompatActivity {
         String username = etUsername.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
 
-        if (username.length() == 0 || password.length() == 0) {
+        if (username.isEmpty() || password.isEmpty()) {
             showMessage("Error", "Please enter all values");
             return;
         }
 
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
         Cursor c = db.rawQuery("SELECT * FROM users WHERE (email=? OR phone=?) AND password=?", new String[]{username, username, password});
 
         if (c.moveToFirst()) {
+            int userId = c.getInt(c.getColumnIndexOrThrow("id"));
             String role = c.getString(c.getColumnIndexOrThrow("role"));
             String firstName = c.getString(c.getColumnIndexOrThrow("firstname"));
             String lastName = c.getString(c.getColumnIndexOrThrow("lastname"));
@@ -109,9 +107,9 @@ public class LoginActivity extends AppCompatActivity {
             String district = "";
             try { district = c.getString(c.getColumnIndexOrThrow("district")); } catch (Exception ignored) {}
             
-            // SAVE SESSION
             SharedPreferences sp = getSharedPreferences("UserSession", MODE_PRIVATE);
             SharedPreferences.Editor editor = sp.edit();
+            editor.putInt("userid", userId);
             editor.putString("phone", phone);
             editor.putString("email", email);
             editor.putString("firstname", firstName);
@@ -122,29 +120,20 @@ public class LoginActivity extends AppCompatActivity {
             editor.putBoolean("isLoggedIn", true);
             editor.apply();
 
+            Intent intent;
             if ("Admin".equalsIgnoreCase(role)) {
-                Intent intent = new Intent(LoginActivity.this, AdminDashboardActivity.class);
-                startActivity(intent);
-                finish();
+                intent = new Intent(LoginActivity.this, AdminDashboardActivity.class);
             } else if ("Farmer".equalsIgnoreCase(role)) {
-                int totalReports = 0;
-                Cursor cursorReports = db.rawQuery("SELECT COUNT(*) FROM reports WHERE user_phone=?", new String[]{phone});
-                if (cursorReports.moveToFirst()) {
-                    totalReports = cursorReports.getInt(0);
-                }
-                cursorReports.close();
-
-                Intent intent = new Intent(LoginActivity.this, FarmerDashboardActivity.class);
-                intent.putExtra("USER_NAME", firstName + " " + lastName);
-                intent.putExtra("TOTAL_REPORTS", String.valueOf(totalReports));
-                intent.putExtra("USER_PHONE", phone);
-                startActivity(intent);
-                finish();
+                intent = new Intent(LoginActivity.this, FarmerDashboardActivity.class);
             } else if ("Vet".equalsIgnoreCase(role)) {
-                Intent intent = new Intent(LoginActivity.this, VetDashboardActivity.class);
-                startActivity(intent);
-                finish();
+                intent = new Intent(LoginActivity.this, VetDashboardActivity.class);
+            } else {
+                showMessage("Error", "Unknown role: " + role);
+                c.close();
+                return;
             }
+            startActivity(intent);
+            finish();
         } else {
             showMessage("Error", "Invalid Credentials");
         }

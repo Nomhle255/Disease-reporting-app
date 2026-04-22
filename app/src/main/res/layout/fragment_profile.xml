@@ -174,33 +174,6 @@
                     android:layout_height="1dp"
                     android:background="#F0F0F0" />
 
-                <!-- Village Row -->
-                <RelativeLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:paddingVertical="8dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Village"
-                        android:textColor="#757575" />
-
-                    <TextView
-                        android:id="@+id/tv_profile_village"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:text="Ha Foso"
-                        android:textColor="#212121"
-                        android:textStyle="bold" />
-                </RelativeLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="#F0F0F0" />
-
                 <!-- District Row -->
                 <RelativeLayout
                     android:layout_width="match_parent"

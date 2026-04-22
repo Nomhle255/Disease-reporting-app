@@ -1,6 +1,5 @@
 package com.example.diseasealertlesotho;
 
-import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -27,7 +26,7 @@ public class MainActivity extends AppCompatActivity {
     private AutoCompleteTextView actRole, actDistrict;
     private MaterialButton btnCreateAccount;
     private TextView tvLogin;
-    private SQLiteDatabase db;
+    private DatabaseHelper dbHelper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,9 +43,10 @@ public class MainActivity extends AppCompatActivity {
             });
         }
 
+        dbHelper = new DatabaseHelper(this);
+
         initViews();
         setupDropdowns();
-        initDatabase();
 
         btnCreateAccount.setOnClickListener(v -> {
             if (validateForm()) {
@@ -58,67 +58,6 @@ public class MainActivity extends AppCompatActivity {
             startActivity(new Intent(MainActivity.this, LoginActivity.class));
             finish();
         });
-    }
-
-    private void initDatabase() {
-        db = openOrCreateDatabase("DiseaseAlertDB", Context.MODE_PRIVATE, null);
-        
-        // Users table - email is primary key, phone is unique
-        db.execSQL("CREATE TABLE IF NOT EXISTS users(" +
-                "email VARCHAR PRIMARY KEY, " +
-                "phone VARCHAR UNIQUE, " +
-                "firstname VARCHAR, " +
-                "lastname VARCHAR, " +
-                "role VARCHAR, " +
-                "password VARCHAR, " +
-                "district VARCHAR, " +
-                "village VARCHAR);");
-
-        // Reports table
-        db.execSQL("CREATE TABLE IF NOT EXISTS reports(" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                "user_phone VARCHAR, " +
-                "animal_type VARCHAR, " +
-                "count INTEGER, " +
-                "symptoms TEXT, " +
-                "date VARCHAR, " +
-                "photo BLOB, " +
-                "gps_location VARCHAR, " +
-                "status VARCHAR DEFAULT 'Pending');");
-
-        // Notifications table
-        db.execSQL("CREATE TABLE IF NOT EXISTS notifications(" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                "user_phone VARCHAR, " +
-                "title VARCHAR, " +
-                "message TEXT, " +
-                "date VARCHAR, " +
-                "type VARCHAR);");
-
-        // Responses table (Vet responses)
-        db.execSQL("CREATE TABLE IF NOT EXISTS responses(" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                "report_id INTEGER, " +
-                "vet_phone VARCHAR, " +
-                "farmer_phone VARCHAR, " +
-                "response_type VARCHAR, " +
-                "message TEXT, " +
-                "status_changed_to VARCHAR, " +
-                "date_responded VARCHAR);");
-
-        // More Info table (Farmer replies)
-        db.execSQL("CREATE TABLE IF NOT EXISTS more_info(" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                "report_id INTEGER, " +
-                "response_id INTEGER, " +
-                "farmer_phone VARCHAR, " +
-                "farmer_message TEXT, " +
-                "photo BLOB, " +
-                "date_submitted VARCHAR);");
-        
-        // Handle migrations
-        try { db.execSQL("ALTER TABLE users ADD COLUMN district VARCHAR"); } catch (Exception ignored) {}
-        try { db.execSQL("ALTER TABLE users ADD COLUMN village VARCHAR"); } catch (Exception ignored) {}
     }
 
     private void initViews() {
@@ -136,12 +75,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupDropdowns() {
-        // Roles
         String[] roles = getResources().getStringArray(R.array.roles_array);
         ArrayAdapter<String> roleAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, roles);
         actRole.setAdapter(roleAdapter);
 
-        // Districts
         String[] districts = getResources().getStringArray(R.array.districts_array);
         ArrayAdapter<String> districtAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, districts);
         actDistrict.setAdapter(districtAdapter);
@@ -156,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
         String district = actDistrict.getText().toString().trim();
         String pwd = etPassword.getText().toString().trim();
 
-        // Check if user already exists (by email or phone)
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
         Cursor cursor = db.rawQuery("SELECT * FROM users WHERE email = ? OR phone = ?", new String[]{email, phone});
         if (cursor.getCount() > 0) {
             showMessage("Error", "User with this email or phone already exists");
@@ -218,13 +155,5 @@ public class MainActivity extends AppCompatActivity {
                 .setTitle(title)
                 .setMessage(message)
                 .show();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (db != null && db.isOpen()) {
-            db.close();
-        }
     }
 }

@@ -37,7 +37,7 @@ public class FarmerReportDetailsActivity extends AppCompatActivity {
     private EditText etFarmerReply;
     private MaterialButton btnSendReply;
 
-    private SQLiteDatabase db;
+    private DatabaseHelper dbHelper;
     private int reportId = -1;
     private String currentStatus = "";
     private byte[] newImageByteArray = null;
@@ -65,7 +65,7 @@ public class FarmerReportDetailsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_farmer_report_history);
 
-        db = openOrCreateDatabase("DiseaseAlertDB", Context.MODE_PRIVATE, null);
+        dbHelper = new DatabaseHelper(this);
 
         initViews();
         loadReport();
@@ -110,6 +110,7 @@ public class FarmerReportDetailsActivity extends AppCompatActivity {
         if (reportId == -1) { finish(); return; }
 
         try {
+            SQLiteDatabase db = dbHelper.getReadableDatabase();
             Cursor cursor = db.rawQuery("SELECT * FROM reports WHERE id = ?", new String[]{String.valueOf(reportId)});
             if (cursor.moveToFirst()) {
                 String animal   = cursor.getString(cursor.getColumnIndexOrThrow("animal_type"));
@@ -141,6 +142,7 @@ public class FarmerReportDetailsActivity extends AppCompatActivity {
         if (layoutConversationContainer == null) return;
         layoutConversationContainer.removeAllViews();
         try {
+            SQLiteDatabase db = dbHelper.getReadableDatabase();
             String query =
                 "SELECT 'vet' AS sender, v.firstname, v.lastname, r.response_type, r.message, NULL AS photo, r.date_responded AS msg_date " +
                 "FROM responses r LEFT JOIN users v ON r.vet_phone = v.phone WHERE r.report_id = ? " +
@@ -208,6 +210,7 @@ public class FarmerReportDetailsActivity extends AppCompatActivity {
             String phone = prefs.getString("phone", "");
             String farmerName = prefs.getString("name", "A Farmer");
             
+            SQLiteDatabase db = dbHelper.getWritableDatabase();
             db.execSQL("INSERT INTO more_info (report_id, farmer_phone, farmer_message, photo, date_submitted) VALUES (?, ?, ?, ?, datetime('now'))",
                     new Object[]{reportId, phone, reply, newImageByteArray});
             
@@ -216,7 +219,7 @@ public class FarmerReportDetailsActivity extends AppCompatActivity {
                 this,
                 "New message from " + farmerName,
                 "Farmer has replied to report #" + reportId,
-                VetCasesActivity.class,
+                VetDashboardActivity.class, // Changed from VetCasesActivity to VetDashboardActivity
                 "Vet",
                 "MESSAGE"
             );
