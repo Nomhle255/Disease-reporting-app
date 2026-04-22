@@ -88,7 +88,7 @@ public class ManageUsersFragment extends Fragment {
     private void setupFilters() {
         btnAll.setOnClickListener(v -> updateFilter("All"));
         btnFarmers.setOnClickListener(v -> updateFilter("Farmer"));
-        btnVets.setOnClickListener(v -> updateFilter("Vet"));
+        btnVets.setOnClickListener(v -> updateFilter("Veterinary"));
         btnAdmins.setOnClickListener(v -> updateFilter("Admin"));
         updateFilterUI();
     }
@@ -107,7 +107,7 @@ public class ManageUsersFragment extends Fragment {
 
         MaterialButton selected = btnAll;
         if (currentFilter.equals("Farmer")) selected = btnFarmers;
-        else if (currentFilter.equals("Vet")) selected = btnVets;
+        else if (currentFilter.equals("Veterinary")) selected = btnVets;
         else if (currentFilter.equals("Admin")) selected = btnAdmins;
 
         selected.setBackgroundTintList(ContextCompat.getColorStateList(requireContext(), R.color.header_green));

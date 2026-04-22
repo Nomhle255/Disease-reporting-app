@@ -20,7 +20,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.google.android.material.button.MaterialButton;
 
-public class MainActivity extends AppCompatActivity {
+public class RegistrationActivity extends AppCompatActivity {
 
     private EditText etFirstName, etLastName, etEmail, etPhone, etPassword, etConfirmPassword;
     private AutoCompleteTextView actRole, actDistrict;
@@ -32,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_registration);
 
         View mainView = findViewById(R.id.main);
         if (mainView != null) {
@@ -55,7 +55,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         tvLogin.setOnClickListener(v -> {
-            startActivity(new Intent(MainActivity.this, LoginActivity.class));
+            startActivity(new Intent(RegistrationActivity.this, LoginActivity.class));
             finish();
         });
     }
@@ -106,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
             db.execSQL("INSERT INTO users (email, phone, firstname, lastname, role, password, district) VALUES(?, ?, ?, ?, ?, ?, ?)",
                     new Object[]{email, phone, fName, lName, role, pwd, district});
             Toast.makeText(this, "Account created successfully", Toast.LENGTH_SHORT).show();
-            startActivity(new Intent(MainActivity.this, LoginActivity.class));
+            startActivity(new Intent(RegistrationActivity.this, LoginActivity.class));
             finish();
         } catch (Exception e) {
             showMessage("Error", "Registration failed: " + e.getMessage());

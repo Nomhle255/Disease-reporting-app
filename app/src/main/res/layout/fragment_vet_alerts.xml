@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/vet_bg">
+    android:background="#F0F4F0">
 
     <!-- Green Header Section -->
     <View
@@ -15,31 +14,17 @@
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
-        android:id="@+id/tv_back_dashboard"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="40dp"
-        android:text="‹ Dashboard"
-        android:textColor="@color/white"
-        android:textSize="16sp"
-        android:clickable="true"
-        android:focusable="true"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
         android:id="@+id/tv_alerts_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="50dp"
         android:text="Send Disease Alert"
         android:textColor="@color/white"
         android:textSize="28sp"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_back_dashboard" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/tv_alerts_subtitle"
@@ -56,7 +41,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:fillViewport="true"
-        app:layout_constraintBottom_toTopOf="@id/bottom_navigation"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toBottomOf="@id/view_header">
 
         <LinearLayout
@@ -65,7 +50,7 @@
             android:orientation="vertical"
             android:padding="20dp">
 
-            <!-- Info Card (Neutral Green theme) -->
+            <!-- Info Card -->
             <androidx.cardview.widget.CardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -190,97 +175,5 @@
 
         </LinearLayout>
     </ScrollView>
-
-    <!-- Bottom Navigation Bar -->
-    <LinearLayout
-        android:id="@+id/bottom_navigation"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:background="@color/white"
-        android:elevation="8dp"
-        android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="parent">
-
-        <LinearLayout
-            android:id="@+id/layout_home_tab"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_today"
-                app:tint="#757575" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Home"
-                android:textColor="#757575"
-                android:textSize="10sp" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/layout_cases_tab"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_agenda"
-                app:tint="#757575" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Cases"
-                android:textColor="#757575"
-                android:textSize="10sp" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/layout_alerts_tab"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@android:drawable/ic_popup_reminder"
-                app:tint="@color/header_green" />
-            <TextView
-                android:id="@+id/tv_alerts_text"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Alerts"
-                android:textColor="@color/header_green"
-                android:textSize="10sp" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/layout_profile_tab"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
-            <ImageView
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@android:drawable/ic_menu_myplaces"
-                app:tint="#757575" />
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Profile"
-                android:textColor="#757575"
-                android:textSize="10sp" />
-        </LinearLayout>
-    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

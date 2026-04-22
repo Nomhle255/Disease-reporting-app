@@ -1,6 +1,8 @@
 package com.example.diseasealertlesotho;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -24,6 +26,7 @@ public class VetDashboardActivity extends AppCompatActivity {
     private ImageView ivHome, ivCases, ivAlerts, ivProfile;
     private TextView tvHome, tvCases, tvAlerts, tvProfile, tvPendingBadge;
     private DatabaseHelper dbHelper;
+    private LinearLayout layoutLogout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,10 +49,23 @@ public class VetDashboardActivity extends AppCompatActivity {
         setupNavigation();
         updatePendingBadge();
 
+        layoutLogout.setOnClickListener(v -> {
+            SharedPreferences prefs = getSharedPreferences("UserSession", Context.MODE_PRIVATE);
+            prefs.edit().clear().apply();
+            Intent intent = new Intent(this, LandingActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+        });
+
         // Handle navigation
         String openFragment = getIntent().getStringExtra("OPEN_FRAGMENT");
         if ("PROFILE".equals(openFragment)) {
             loadFragment(new ProfileFragment(), "PROFILE");
+        } else if ("CASES".equals(openFragment)) {
+            loadFragment(new VetCasesFragment(), "CASES");
+        } else if ("ALERTS".equals(openFragment)) {
+            loadFragment(new VetAlertsFragment(), "ALERTS");
         } else {
             loadFragment(new VetHomeFragment(), "HOME");
         }
@@ -72,14 +88,13 @@ public class VetDashboardActivity extends AppCompatActivity {
         tvProfile = findViewById(R.id.tv_profile_text);
         
         tvPendingBadge = findViewById(R.id.tv_pending_badge);
+        layoutLogout = findViewById(R.id.layout_logout_top);
     }
 
     private void setupNavigation() {
         layoutHomeTab.setOnClickListener(v -> loadFragment(new VetHomeFragment(), "HOME"));
         layoutCasesTab.setOnClickListener(v -> loadFragment(new VetCasesFragment(), "CASES"));
-        layoutAlertsTab.setOnClickListener(v -> {
-            startActivity(new Intent(this, VetAlertsActivity.class));
-        });
+        layoutAlertsTab.setOnClickListener(v -> loadFragment(new VetAlertsFragment(), "ALERTS"));
         layoutProfileTab.setOnClickListener(v -> loadFragment(new ProfileFragment(), "PROFILE"));
     }
 
@@ -107,7 +122,7 @@ public class VetDashboardActivity extends AppCompatActivity {
         transaction.replace(R.id.vet_fragment_container, fragment, tag);
         transaction.commit();
         updateNavUI(tag);
-        updatePendingBadge(); // Refresh badge when switching fragments
+        updatePendingBadge();
     }
 
     private void updateNavUI(String activeTab) {

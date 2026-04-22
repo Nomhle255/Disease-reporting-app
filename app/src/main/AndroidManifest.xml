@@ -27,7 +27,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".MainActivity"
+            android:name=".RegistrationActivity"
             android:exported="false" />
         <activity
             android:name=".LoginActivity"
@@ -37,9 +37,6 @@
             android:exported="false" />
         <activity
             android:name=".VetDashboardActivity"
-            android:exported="false" />
-        <activity
-            android:name=".VetAlertsActivity"
             android:exported="false" />
         <activity
             android:name=".VetCaseDetailsActivity"

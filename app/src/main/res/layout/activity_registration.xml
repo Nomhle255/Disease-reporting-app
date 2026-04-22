@@ -218,13 +218,25 @@
                     android:text="Password"
                     android:textColor="@color/black" />
 
-                <EditText
-                    android:id="@+id/et_password"
+                <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/edit_text_bg"
-                    android:textColor="@color/black"
-                    android:inputType="textPassword" />
+                    android:layout_marginTop="8dp"
+                    app:boxBackgroundMode="none"
+                    app:hintEnabled="false"
+                    app:passwordToggleEnabled="true"
+                    app:passwordToggleTint="@color/header_green"
+                    app:startIconDrawable="@android:drawable/ic_lock_idle_lock"
+                    app:startIconTint="@color/header_green">
+
+                    <EditText
+                        android:id="@+id/et_password"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/edit_text_bg"
+                        android:textColor="@color/black"
+                        android:inputType="textPassword" />
+                </com.google.android.material.textfield.TextInputLayout>
 
                 <!-- Confirm Password -->
                 <TextView
@@ -234,13 +246,25 @@
                     android:text="Confirm Password"
                     android:textColor="@color/black" />
 
-                <EditText
-                    android:id="@+id/et_confirm_password"
+                <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/edit_text_bg"
-                    android:textColor="@color/black"
-                    android:inputType="textPassword" />
+                    android:layout_marginTop="8dp"
+                    app:boxBackgroundMode="none"
+                    app:hintEnabled="false"
+                    app:passwordToggleEnabled="true"
+                    app:passwordToggleTint="@color/header_green"
+                    app:startIconDrawable="@android:drawable/ic_lock_idle_lock"
+                    app:startIconTint="@color/header_green">
+
+                    <EditText
+                        android:id="@+id/et_confirm_password"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/edit_text_bg"
+                        android:textColor="@color/black"
+                        android:inputType="textPassword" />
+                </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_create_account"

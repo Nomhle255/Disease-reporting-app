@@ -61,7 +61,7 @@ public class LoginActivity extends AppCompatActivity {
         tvRegister.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(LoginActivity.this, MainActivity.class);
+                Intent intent = new Intent(LoginActivity.this, RegistrationActivity.class);
                 startActivity(intent);
                 finish();
             }
@@ -85,16 +85,17 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void loginUser() {
-        String username = etUsername.getText().toString().trim();
+        String email = etUsername.getText().toString().trim();
         String password = etPassword.getText().toString().trim();
 
-        if (username.isEmpty() || password.isEmpty()) {
-            showMessage("Error", "Please enter all values");
+        if (email.isEmpty() || password.isEmpty()) {
+            showMessage("Error", "Please enter both email and password");
             return;
         }
 
         SQLiteDatabase db = dbHelper.getReadableDatabase();
-        Cursor c = db.rawQuery("SELECT * FROM users WHERE (email=? OR phone=?) AND password=?", new String[]{username, username, password});
+        // Updated query to check only the email field
+        Cursor c = db.rawQuery("SELECT * FROM users WHERE email=? AND password=?", new String[]{email, password});
 
         if (c.moveToFirst()) {
             int userId = c.getInt(c.getColumnIndexOrThrow("id"));
@@ -102,7 +103,7 @@ public class LoginActivity extends AppCompatActivity {
             String firstName = c.getString(c.getColumnIndexOrThrow("firstname"));
             String lastName = c.getString(c.getColumnIndexOrThrow("lastname"));
             String phone = c.getString(c.getColumnIndexOrThrow("phone"));
-            String email = c.getString(c.getColumnIndexOrThrow("email"));
+            String userEmail = c.getString(c.getColumnIndexOrThrow("email"));
             
             String district = "";
             try { district = c.getString(c.getColumnIndexOrThrow("district")); } catch (Exception ignored) {}
@@ -111,7 +112,7 @@ public class LoginActivity extends AppCompatActivity {
             SharedPreferences.Editor editor = sp.edit();
             editor.putInt("userid", userId);
             editor.putString("phone", phone);
-            editor.putString("email", email);
+            editor.putString("email", userEmail);
             editor.putString("firstname", firstName);
             editor.putString("lastname", lastName);
             editor.putString("name", firstName + " " + lastName);
@@ -125,7 +126,7 @@ public class LoginActivity extends AppCompatActivity {
                 intent = new Intent(LoginActivity.this, AdminDashboardActivity.class);
             } else if ("Farmer".equalsIgnoreCase(role)) {
                 intent = new Intent(LoginActivity.this, FarmerDashboardActivity.class);
-            } else if ("Vet".equalsIgnoreCase(role)) {
+            } else if ("Veterinary".equalsIgnoreCase(role)) {
                 intent = new Intent(LoginActivity.this, VetDashboardActivity.class);
             } else {
                 showMessage("Error", "Unknown role: " + role);
@@ -135,7 +136,7 @@ public class LoginActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         } else {
-            showMessage("Error", "Invalid Credentials");
+            showMessage("Error", "Invalid Email or Password");
         }
         c.close();
     }

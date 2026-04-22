@@ -1,9 +1,12 @@
 package com.example.diseasealertlesotho;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -20,6 +23,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
     private ImageView ivHome, ivUsers, ivReports, ivStats, ivProfile;
     private TextView tvHome, tvUsers, tvReports, tvStats, tvProfile;
+    private LinearLayout layoutLogout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +42,15 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
         initViews();
         setupClickListeners();
+
+        layoutLogout.setOnClickListener(v -> {
+            SharedPreferences prefs = getSharedPreferences("UserSession", Context.MODE_PRIVATE);
+            prefs.edit().clear().apply();
+            Intent intent = new Intent(this, LandingActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+        });
 
         String openFragment = getIntent().getStringExtra("OPEN_FRAGMENT");
         if ("PROFILE".equals(openFragment)) {
@@ -59,6 +72,8 @@ public class AdminDashboardActivity extends AppCompatActivity {
         tvReports = findViewById(R.id.tv_reports_text);
         tvStats = findViewById(R.id.tv_stats_text);
         tvProfile = findViewById(R.id.tv_profile_text);
+        
+        layoutLogout = findViewById(R.id.layout_logout_top);
     }
 
     private void setupClickListeners() {

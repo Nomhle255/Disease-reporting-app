@@ -16,6 +16,39 @@
         app:layout_constraintBottom_toTopOf="@+id/bottom_navigation"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- Top Right Logout Button -->
+    <LinearLayout
+        android:id="@+id/layout_logout_top"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="40dp"
+        android:layout_marginEnd="16dp"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:elevation="10dp"
+        android:focusable="true"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:text="Logout"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:src="@android:drawable/ic_lock_power_off"
+            app:tint="@color/white" />
+    </LinearLayout>
+
     <!-- Bottom Navigation Bar - Shared across all fragments -->
     <LinearLayout
         android:id="@+id/bottom_navigation"

@@ -45,7 +45,7 @@ public class LandingActivity extends AppCompatActivity {
         initViews();
 
         btnGetStarted.setOnClickListener(v -> {
-            startActivity(new Intent(LandingActivity.this, MainActivity.class));
+            startActivity(new Intent(LandingActivity.this, RegistrationActivity.class));
         });
 
         btnLogin.setOnClickListener(v -> {
@@ -62,7 +62,7 @@ public class LandingActivity extends AppCompatActivity {
         Intent intent;
         if ("Admin".equalsIgnoreCase(role)) {
             intent = new Intent(LandingActivity.this, AdminDashboardActivity.class);
-        } else if ("Vet".equalsIgnoreCase(role)) {
+        } else if ("Veterinary".equalsIgnoreCase(role)) {
             intent = new Intent(LandingActivity.this, VetDashboardActivity.class);
         } else {
             // Default to Farmer

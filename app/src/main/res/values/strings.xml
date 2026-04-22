@@ -3,7 +3,7 @@
 
     <string-array name="roles_array">
         <item>Farmer</item>
-        <item>Vet</item>
+        <item>Veterinary</item>
         <item>Admin</item>
     </string-array>
 

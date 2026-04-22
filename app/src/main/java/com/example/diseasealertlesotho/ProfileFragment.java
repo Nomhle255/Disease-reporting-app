@@ -40,7 +40,8 @@ public class ProfileFragment extends Fragment {
             SharedPreferences prefs = getActivity().getSharedPreferences("UserSession", Context.MODE_PRIVATE);
             prefs.edit().clear().apply();
             
-            Intent intent = new Intent(getActivity(), LoginActivity.class);
+            // Redirect to LandingActivity instead of LoginActivity
+            Intent intent = new Intent(getActivity(), LandingActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
         });
@@ -67,13 +68,14 @@ public class ProfileFragment extends Fragment {
 
     private void loadUserData() {
         SharedPreferences prefs = getActivity().getSharedPreferences("UserSession", Context.MODE_PRIVATE);
-        String phoneSession = prefs.getString("phone", "");
+        // Using userid as primary session indicator as per recent migration
+        int userId = prefs.getInt("userid", -1);
 
-        if (phoneSession.isEmpty()) return;
+        if (userId == -1) return;
 
         try {
             db = getActivity().openOrCreateDatabase("DiseaseAlertDB", Context.MODE_PRIVATE, null);
-            Cursor cursor = db.rawQuery("SELECT * FROM users WHERE phone = ?", new String[]{phoneSession});
+            Cursor cursor = db.rawQuery("SELECT * FROM users WHERE id = ?", new String[]{String.valueOf(userId)});
 
             if (cursor.moveToFirst()) {
                 String firstName = cursor.getString(cursor.getColumnIndexOrThrow("firstname"));
